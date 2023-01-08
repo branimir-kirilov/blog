@@ -7,8 +7,6 @@ import Footer from './Footer'
 import MobileNav from './MobileNav'
 import ThemeSwitch from './ThemeSwitch'
 import { ReactNode } from 'react'
-import Image from 'next/image'
-import logo from '@/data/logo.webp'
 import { useRouter } from 'next/router'
 
 interface Props {
@@ -31,7 +29,7 @@ const LayoutWrapper = ({ children }: Props) => {
               <div className="flex items-center justify-between">
                 {typeof siteMetadata.headerTitle === 'string' ? (
                   <div className="hidden h-6 text-2xl font-semibold sm:block">
-                    {`~${router.asPath}`}{' '}
+                    {`~${router.asPath === '/' ? '/home' : router.asPath}`}{' '}
                   </div>
                 ) : (
                   siteMetadata.headerTitle
