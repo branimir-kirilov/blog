@@ -1,13 +1,15 @@
 import { Inter } from '@next/font/google'
 import siteMetadata from '@/data/siteMetadata'
 import headerNavLinks from '@/data/headerNavLinks'
-import Logo from '@/data/logo.svg'
 import Link from './Link'
 import SectionContainer from './SectionContainer'
 import Footer from './Footer'
 import MobileNav from './MobileNav'
 import ThemeSwitch from './ThemeSwitch'
 import { ReactNode } from 'react'
+import Image from 'next/image'
+import logo from '@/data/logo.webp'
+import { useRouter } from 'next/router'
 
 interface Props {
   children: ReactNode
@@ -18,6 +20,8 @@ const inter = Inter({
 })
 
 const LayoutWrapper = ({ children }: Props) => {
+  const router = useRouter()
+
   return (
     <SectionContainer>
       <div className={`${inter.className} flex h-screen flex-col justify-between font-sans`}>
@@ -25,12 +29,9 @@ const LayoutWrapper = ({ children }: Props) => {
           <div>
             <Link href="/" aria-label={siteMetadata.headerTitle}>
               <div className="flex items-center justify-between">
-                <div className="mr-3">
-                  <Logo />
-                </div>
                 {typeof siteMetadata.headerTitle === 'string' ? (
                   <div className="hidden h-6 text-2xl font-semibold sm:block">
-                    {siteMetadata.headerTitle}
+                    {`~${router.asPath}`}{' '}
                   </div>
                 ) : (
                   siteMetadata.headerTitle
