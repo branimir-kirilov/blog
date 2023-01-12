@@ -8,6 +8,7 @@ import { InferGetStaticPropsType } from 'next'
 import { NewsletterForm } from 'pliny/ui/NewsletterForm'
 import { allBlogs } from 'contentlayer/generated'
 import type { Blog } from 'contentlayer/generated'
+import { RoughNotation } from 'react-rough-notation'
 
 const MAX_DISPLAY = 5
 
@@ -31,7 +32,7 @@ export default function Home({ posts }: InferGetStaticPropsType<typeof getStatic
             </span>
           </h1>
           <p className="text-lg leading-7 text-gray-500 dark:text-gray-400">
-            {siteMetadata.description}
+            Welcome to my personal website. Here you'll find more information about me.
           </p>
         </div>
         <ul className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -95,11 +96,6 @@ export default function Home({ posts }: InferGetStaticPropsType<typeof getStatic
           >
             All Posts &rarr;
           </Link>
-        </div>
-      )}
-      {siteMetadata.newsletter.provider && (
-        <div className="flex items-center justify-center pt-4">
-          <NewsletterForm />
         </div>
       )}
     </>
