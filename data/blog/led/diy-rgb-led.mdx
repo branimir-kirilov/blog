@@ -8,12 +8,12 @@ summary: Using spare parts I've collected over the years from all my half-finish
 
 ## Intro
 
-I always felt like there isn't enough light on my desk. I don't have any dedicated lamps on it and I've always relied on the ceiling light, which is not ideal. So today, I had an idea - I could use some of the spare parts I've collected over the years from all my half-finished projects to create a RGB backlight for my desk that I can control from my mobile phone.
+I always felt like there isn't enough light on my desk. I don't have any dedicated lamps on it and I've always relied on the ceiling light, which is not ideal. So today, I had an idea - I could use some of the spare parts I've collected over the years from all my half-finished projects to create an RGB backlight for my desk that I can control from my mobile phone.
 
 ## Hardware
 
-Excited about the idea of solving my desk lighting issue, I decided to rummage through one of the boxes of spare parts to see what I could find. I already knew that I have several WEMOS boards laying around and I decided to use the oldest one - D1, as it already has a dedicated power suply port. For those of use that don't know about [this](https://tasmota.github.io/docs/devices/Wemos-D1-R1-%26-R2/) board - it is based on ESP8266 (it has WiFi capabilities) and it can be easily programmed with Arduino Studio. Additionally, there are a ton of helpful libraries deeloped by the community, which makes its usage quite easy.
-4
+Excited about the idea of solving my desk lighting issue, I decided to rummage through one of the boxes of spare parts to see what I could find. I already knew that I have several WEMOS boards laying around and I decided to use the oldest one - D1, as it already has a dedicated power supply port. For those of you that don't know about [this](https://tasmota.github.io/docs/devices/Wemos-D1-R1-%26-R2/) board - it is based on ESP8266 (it has WiFi capabilities) and it can be easily programmed with Arduino Studio. Additionally, there are a ton of helpful libraries developed by the community, which makes its usage easy.
+
 <p align="center">
     <Image alt="wemos-d1-r1" src="/static/images/board.jpeg" width={256} height={128} />
     <label>Wemos D1 R1</label>
@@ -21,9 +21,9 @@ Excited about the idea of solving my desk lighting issue, I decided to rummage t
 
 Now that I answered the board question, I had to find an actual light source, after all the project would be pointless without it. After a bit of searching, I came across a dusty 12V LED strip and a few MOSFETs that were wrapped up with duct tape and in pretty rough shape. Despite their poor condition, I decided to salvage what I could and get to work.
 
-At this point I have everything except power source. I used to have a DC charger with voltage regulator but it seems like it has died a long time ago. The only thing that I have that could possibly work is a 9v power supply from a network switch that is not in use anymore.
+At this point, I have everything except the power source. I used to have a DC charger with a voltage regulator but it seems like it has died a long time ago. The only thing that I have that could work is a 9v power supply from a network switch that is not in use anymore.
 
-Since the LED strip is meant to run on 12v with this power supply I will not be able to get full brightness of it. On the other hand, this power supply has a jack that fits to the barrel of the Wemose D1 board. I *should* be able to use it directly to power the board and the LED strip (from the VIN port) at the same time. However, this is conditional for my case, as the LED strip is not very long. The voltage regulator of the board *should* be able to dissipate the unused voltage without much trouble, although this is not the optiomal solution.
+Since the LED strip is meant to run on 12v with this power supply I will not be able to get full brightness of it. On the other hand, this power supply has a jack that fits the barrel of the Wemose D1 board. I *should* be able to use it directly to power the board and the LED strip (from the VIN port) at the same time. However, this is conditional for my case, as the LED strip is not very long. The voltage regulator of the board *should* be able to dissipate the unused voltage without much trouble, although this is not the optional solution.
 
 [More info on powering Arduinos](https://thepihut.com/blogs/raspberry-pi-tutorials/how-do-i-power-my-arduino)
 
@@ -35,22 +35,22 @@ Connection scheme:
 
 Luckily, I have a soldering station and a bunch of headers and cables that I could use. Of course, my soldering skills are limited, but at least this is a good chance to practice them.
 
-First step would be to clean up the LED strip and solder some headers to it for easier connection:
+The first step would be to clean up the LED strip and solder some headers to it for easier connection:
 
 <p align="center">
     <Image alt="led-strip-soldered" src="/static/images/led-strp.jpeg" width={256} height={128} />
     <label>Led strip soldered</label>
 </p>
 
-Next step is to solder the wires to the board and take care of the MOSFETs:
+The next step is to solder the wires to the board and take care of the MOSFETs:
 
 ![how to connect](/static/images/soldered.jpeg)
 
 ## Writing the device code
 
-I want this to be very simple, without overengineering it with any cloud based solutions. It only needs to be accessible from my home, I don't need to turn on/off my desk lights from outside of my home.
+I want this to be very simple, without overengineering it with any cloud-based solutions. It only needs to be accessible from my home, I don't need to turn on/off my desk lights from outside of my home.
 
-For this reason, a simple HTTP server running on the board will be enough. At first I'll only expose one endpoint that would expect the RGB values as query parameters and would set them to the LED strip. For the future, I may expose more endpoints that would start animations, timers or etc.
+For this reason, a simple HTTP server running on the board will be enough. At first, I'll only expose one endpoint that would expect the RGB values as query parameters and would set them to the LED strip. In the future, I may expose more endpoints that would start animations, timers, etc.
 
 ### Configuring WiFi connection and network settings
 
@@ -213,4 +213,5 @@ After plugging in the power suply and dimming the main lights in the room, the r
     <Image alt="wemos-d1-r1" src="/static/images/purple.jpeg" width={512} height={512} />
 </p>
 
-🎉 And with this the first part of the solution is ready! The next chapter will cover the implementation of react-native application with color picker and some basic controls.
+🎉 And with this the first part of the solution is ready! The next chapter will cover the implementation of the react-native application with a color picker and some basic controls.
+
