@@ -2,6 +2,7 @@ import Mail from './mail.svg'
 import Github from './github.svg'
 import Youtube from './youtube.svg'
 import Linkedin from './linkedin.svg'
+import Instagram from './instagram.svg'
 
 // Icons taken from: https://simpleicons.org/
 
@@ -10,6 +11,7 @@ const components = {
   github: Github,
   youtube: Youtube,
   linkedin: Linkedin,
+  instagram: Instagram,
 }
 
 const SocialIcon = ({ kind, href, size = 8 }) => {

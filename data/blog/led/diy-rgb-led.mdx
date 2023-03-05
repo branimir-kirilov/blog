@@ -1,0 +1,219 @@
+---
+title: DIY desk RGB lights [Part 1]
+date: '2023-03-05'
+tags: ['iot', 'LED', 'c', 'js', 'smarthome', 'reactnative', 'react']
+draft: false
+summary: Using spare parts I've collected over the years from all my half-finished projects to create a RGB backlight for my desk that I can control from my mobile phone
+---
+
+## Intro
+
+I always felt like there isn't enough light on my desk. I don't have any dedicated lamps on it and I've always relied on the ceiling light, which is not ideal. So today, I had an idea - I could use some of the spare parts I've collected over the years from all my half-finished projects to create a RGB backlight for my desk that I can control from my mobile phone.
+
+## Hardware
+
+Excited about the idea of solving my desk lighting issue, I decided to rummage through one of the boxes of spare parts to see what I could find. I already knew that I have several WEMOS boards laying around and I decided to use the oldest one - D1, as it already has a dedicated power suply port. For those of use that don't know about [this](https://tasmota.github.io/docs/devices/Wemos-D1-R1-%26-R2/) board - it is based on ESP8266 (it has WiFi capabilities) and it can be easily programmed with Arduino Studio. Additionally, there are a ton of helpful libraries deeloped by the community, which makes its usage quite easy.
+4
+<p align="center">
+    <Image alt="wemos-d1-r1" src="/static/images/board.jpeg" width={256} height={128} />
+    <label>Wemos D1 R1</label>
+</p>
+
+Now that I answered the board question, I had to find an actual light source, after all the project would be pointless without it. After a bit of searching, I came across a dusty 12V LED strip and a few MOSFETs that were wrapped up with duct tape and in pretty rough shape. Despite their poor condition, I decided to salvage what I could and get to work.
+
+At this point I have everything except power source. I used to have a DC charger with voltage regulator but it seems like it has died a long time ago. The only thing that I have that could possibly work is a 9v power supply from a network switch that is not in use anymore.
+
+Since the LED strip is meant to run on 12v with this power supply I will not be able to get full brightness of it. On the other hand, this power supply has a jack that fits to the barrel of the Wemose D1 board. I *should* be able to use it directly to power the board and the LED strip (from the VIN port) at the same time. However, this is conditional for my case, as the LED strip is not very long. The voltage regulator of the board *should* be able to dissipate the unused voltage without much trouble, although this is not the optiomal solution.
+
+[More info on powering Arduinos](https://thepihut.com/blogs/raspberry-pi-tutorials/how-do-i-power-my-arduino)
+
+## Soldering
+
+Connection scheme:
+
+![how to connect](/static/images/HowToConnect.png)
+
+Luckily, I have a soldering station and a bunch of headers and cables that I could use. Of course, my soldering skills are limited, but at least this is a good chance to practice them.
+
+First step would be to clean up the LED strip and solder some headers to it for easier connection:
+
+<p align="center">
+    <Image alt="led-strip-soldered" src="/static/images/led-strp.jpeg" width={256} height={128} />
+    <label>Led strip soldered</label>
+</p>
+
+Next step is to solder the wires to the board and take care of the MOSFETs:
+
+![how to connect](/static/images/soldered.jpeg)
+
+## Writing the device code
+
+I want this to be very simple, without overengineering it with any cloud based solutions. It only needs to be accessible from my home, I don't need to turn on/off my desk lights from outside of my home.
+
+For this reason, a simple HTTP server running on the board will be enough. At first I'll only expose one endpoint that would expect the RGB values as query parameters and would set them to the LED strip. For the future, I may expose more endpoints that would start animations, timers or etc.
+
+### Configuring the device to have static ip
+
+1. We need to include 
+```#include <ESP8266WiFi.h>```
+
+2. Setup the network
+```c
+IPAddress ip(192, 168, 1, 75);   
+IPAddress gateway(192, 168, 1, 1);
+IPAddress subnet(255, 255, 255, 0);
+```
+
+3. Then, in my setup function:
+
+```c
+void setup() {
+    WiFi.config(ip, gateway, subnet);
+    WiFi.begin(ssid, password);
+    while (WiFi.status() != WL_CONNECTED) {
+      delay(500);
+      Serial.print(".");
+    }
+
+    Serial.println("");
+    Serial.println("WiFi connected");
+    Serial.println("IP address: ");
+    Serial.println(WiFi.localIP()); 
+}
+```
+
+### Testing the LED strip (and all the wiring)
+
+1. First step is to define the pins that we have connected. In my case:
+
+```c
+#define REDPIN D7
+#define GREENPIN D6
+#define BLUEPIN D5
+```
+
+2. Then, I'll just set the green pin to 255:
+
+```c
+pinMode(BLUEPIN, OUTPUT);
+pinMode(GREENPIN, OUTPUT);
+pinMode(REDPIN, OUTPUT);
+
+analogWrite(REDPIN, 0);
+analogWrite(BLUEPIN, 0);
+analogWrite(GREENPIN, 255);
+```
+
+🎉 The LED is green!
+
+<p align="center">
+    <Image alt="wemos-d1-r1" src="/static/images/green.jpeg" width={256} height={128} />
+</p>
+
+### Creating a web server
+
+1. We need to include:
+
+```#include <ESP8266WebServer.h>```
+
+2. I will create my server to run on port :93
+
+```ESP8266WebServer server(93);```
+
+3. Then, in the setup function I will start the server and add the endpoint handlers. (I'll define the onHome method below)
+
+```c
+server.on(F("/"), onHome);
+server.begin();
+Serial.println("HTTP server started");
+```
+
+4. In the loop function I need to tell the server to handle the client connections:
+
+```
+void loop() {
+    server.handleClient();
+}
+```
+
+5. Now we need to act when clients go to / route:
+
+I'll simply return 200 and "hello world!" as text:
+
+```c
+void onHome() {
+    server.send(200, "text/plain", "hello world!");
+}
+```
+
+6. Now, let's upload and test
+
+![how to connect](/static/images/browser.png)
+
+🎉 Our server is working!
+
+
+### Creating endpoint to handle RGB color change
+
+1. We'll add a new endpoint called rgb:
+
+```c
+server.on(F("/"), onRgb);
+```
+
+2. Implement the onRgb handler:
+
+```c
+void onRgb() {
+    String r = server.arg("r");
+    String g = server.arg("g");
+    String b = server.arg("b");
+    
+    int castedR = r.toInt();
+    int castedG = g.toInt();
+    int castedB = b.toInt();
+
+    analogWrite(REDPIN, castedR);
+    analogWrite(BLUEPIN, castedB);
+    analogWrite(GREENPIN, castedG);
+
+    server.send(200, "text/plain", "R: '" + r + "'" + "G: '" + g + "'" + "B: '" + b + "'");
+}
+```
+
+3. Time to test:
+
+🎉 Endpoint is working and LED is in the correct color!
+
+<p align="center">
+    <Image alt="wemos-d1-r1" src="/static/images/red.jpeg" width={400} height={400} />
+</p>
+
+Full code can be found [on GitHub](https://github.com/branimir-kirilov/desk-lights/blob/main/device/device.ino)
+
+### Attaching the LED to the desk and putting everything in a box
+
+My girlfriend found a box from a bracelet she recently purchased and it was a solid fit. I might do something custom another day, but for now this will work:
+
+<p align="center">
+    <Image alt="wemos-d1-r1" src="/static/images/box.jpeg" width={400} height={400} />
+</p>
+
+I used some double sided tape to put the LED to the back of the desk:
+
+<p align="center">
+    <Image alt="wemos-d1-r1" src="/static/images/back-of-desk.jpeg" width={512} height={512} />
+</p>
+
+### Testing the lighting
+
+After plugging in the power suply and dimming the main lights in the room, the result is quite good:
+
+<p align="center">
+    <Image alt="wemos-d1-r1" src="/static/images/green-ready.jpeg" width={512} height={512} />
+</p>
+<p align="center">
+    <Image alt="wemos-d1-r1" src="/static/images/purple.jpeg" width={512} height={512} />
+</p>
+
+🎉 And with this the first part of the solution is ready! The next chapter will cover the implementation of react-native application with color picker and some basic controls.
