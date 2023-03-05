@@ -52,7 +52,7 @@ I want this to be very simple, without overengineering it with any cloud based s
 
 For this reason, a simple HTTP server running on the board will be enough. At first I'll only expose one endpoint that would expect the RGB values as query parameters and would set them to the LED strip. For the future, I may expose more endpoints that would start animations, timers or etc.
 
-### Configuring the device to have static ip
+### Configuring WiFi connection and network settings
 
 1. We need to include 
 ```#include <ESP8266WiFi.h>```
@@ -92,7 +92,7 @@ void setup() {
 #define BLUEPIN D5
 ```
 
-2. Then, I'll just set the green pin to 255:
+2. Then, I'll just set the green pin to 255 in the setup() function, so I can test the connection:
 
 ```c
 pinMode(BLUEPIN, OUTPUT);
@@ -112,15 +112,17 @@ analogWrite(GREENPIN, 255);
 
 ### Creating a web server
 
-1. We need to include:
+The next step is creating the HTTP server. Since there's already a library created for this, it's quite easy.
+
+1. First, we need to include:
 
 ```#include <ESP8266WebServer.h>```
 
-2. I will create my server to run on port :93
+2. Then, the server should be created. I will create mine to run on port *93*
 
 ```ESP8266WebServer server(93);```
 
-3. Then, in the setup function I will start the server and add the endpoint handlers. (I'll define the onHome method below)
+3. Then, in the setup function I will add the endpoint handlers and start the server. (I'll define the onHome method in the section below)
 
 ```c
 server.on(F("/"), onHome);
@@ -130,13 +132,13 @@ Serial.println("HTTP server started");
 
 4. In the loop function I need to tell the server to handle the client connections:
 
-```
+```c
 void loop() {
     server.handleClient();
 }
 ```
 
-5. Now we need to act when clients go to / route:
+5. Now we need to act when clients go to "/" route:
 
 I'll simply return 200 and "hello world!" as text:
 
@@ -146,12 +148,11 @@ void onHome() {
 }
 ```
 
-6. Now, let's upload and test
+6. Now, let's upload to device and test
+
+🎉 The server is working!
 
 ![how to connect](/static/images/browser.png)
-
-🎉 Our server is working!
-
 
 ### Creating endpoint to handle RGB color change
 
