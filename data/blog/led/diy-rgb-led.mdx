@@ -178,7 +178,33 @@ void onRgb() {
 }
 ```
 
-3. Time to test:
+3. Let's also add some validation. The toInt() method will default to 0 if the conversion is not possible. However, we need to make sure colors are in the [0;255] interval:
+
+```c
+int validColor(int color) {
+    if (color < 0) {
+        return 0;
+    } else if (color > 255) {
+        return 255;
+    }
+
+    return color;
+}
+```
+
+We can then use the validator method as such:
+
+```c
+void onRgb() {
+    String r = server.arg("r");
+    ...
+
+    // toInt() defaults to 0 if no valid conversion is possible
+    analogWrite(REDPIN, validColor(r.toInt()));...
+}
+```
+
+4. Time to test:
 
 🎉 Endpoint is working and LED is in the correct color!
 
@@ -213,5 +239,5 @@ After plugging in the power suply and dimming the main lights in the room, the r
     <Image alt="wemos-d1-r1" src="/static/images/purple.jpeg" width={512} height={512} />
 </p>
 
-🎉 And with this the first part of the solution is ready! The next chapter will cover the implementation of the react-native application with a color picker and some basic controls.
+🎉 And with this the first part of the solution is ready! The next chapter will cover the implementation of web/native application with a color picker and some basic controls.
 
