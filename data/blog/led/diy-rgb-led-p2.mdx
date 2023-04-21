@@ -1,0 +1,150 @@
+---
+title: DIY desk RGB lights [Part 2] - Native app structure
+date: '2023-04-20'
+tags: ['iot', 'LED', 'c', 'js', 'smarthome', 'reactnative', 'react', 'prompt', 'expo']
+draft: false
+summary: Using spare parts I've collected over the years from all my half-finished projects to create a RGB backlight for my desk that I can control from my mobile phone
+---
+
+# Intro
+
+In today's world, mobile applications have become an integral part of our daily lives. From ordering food to booking tickets, everything is just a tap away. In the previous post, I talked about building and programming an Arduino board. Now, it's time to take our project to the next level by integrating it with a mobile app. In this blog post, I will explore the exciting world of React Native and show you how to create a mobile app that can communicate with the Arduino board I previously built.
+
+# Prerequisites
+
+#### NodeJS
+
+If you don't have NodeJS, the first step is to download and install it:
+
+[NodeJS Downloads](https://nodejs.org/en/download)
+
+#### Expo
+
+I'll be using Expo to bootstrap and develop our native application.
+
+
+The Expo platform revolves around React Native, offering a range of tools and services. Among its numerous capabilities, the most pertinent one for our current purposes is its ability to swiftly get you started on developing a React Native app. All you need is a phone or an emulator and a recent Node.js version.
+
+[Installation guide](https://docs.expo.dev/get-started/installation/)
+
+#### Expo Go mobile app
+
+For the sake of easier debugging, I will use the Expo mobile app. This will allow me to run the app directly on my phone and I would not need to use an emulator.
+
+[Expo mobile app](https://play.google.com/store/apps/details?id=host.exp.exponent&hl=en_US)
+
+#### EAS
+
+I'll also be using EAS to generate an APK (I use Android) that I can install on my own phone after I'm done with the app... or at least with the first iteration of it.
+
+Expo EAS (Expo Application Services) is a suite of cloud-based tools and services offered by Expo to streamline the development, building, and publishing of React Native apps. It encompasses various features, such as faster builds, automated app signing, and publishing, advanced debugging, and crash reporting tools, among others. Expo EAS aims to simplify the React Native app development process and reduce the time and effort required to build, test, and deploy high-quality mobile applications.
+
+[EAS setup](https://docs.expo.dev/build/setup/) - I'll cover this step by step later in this post
+
+# Design and structure
+
+Now it's time to build the application that will control the RGB lights by communicating with the server running on the Wemos board in my local network.
+
+### Design
+
+As usual, the first part of every application is to think about how it will work and how it will look like.
+
+The main features that I need to support are:
+
+1. A button that turns on/off the light strip
+2. Color wheel/color picker
+3. Brightness slider 
+
+For the sake of abstraction and reusability, I can also implement the functionality to add multiple light sources, each one of them having these options + a name.
+
+### AI to the rescue!
+
+Now, let's think about the layout of the application and the actual "design". I'm not a designer so I figured I'll look for some inspiration on ```Midjourney```.
+
+> Never used Midjourney? You deffinetely should, it's awesome.
+> Here's a [link](https://www.midjourney.com/) to their official site
+
+ Since we're in the middle of an AI hype, I could use Chat GPT too, to generate prompts for Midjourney. I posted some info for Midjourney from their official docs and instructed Chat GPT to generate some prompts for me. This is one of the prompts that it came up with:
+
+ > A mobile app that allows users to control the lighting in their homes. The app should have a dark color scheme, with shades of black and grey dominating the interface. The color wheel should be prominently featured, allowing users to adjust the hue and brightness of their lights with ease. The design should be clean and modern, with minimalistic icons and intuitive controls.
+
+ I posted this in the Midjouney Discord and voila, I have inspiration for my app:
+
+ <p align="center" style={{ display: 'flex', justifyContent: 'space-around' }}>
+    <Image alt="led-strip-soldered" src="/static/images/midjourney-1.png" width={256} height={128} />
+    <Image alt="led-strip-soldered" src="/static/images/midjourney-2.png" width={256} height={128} />
+</p>
+
+
+#### Structure
+
+Apart from the light controls I have other ideas for home automation that I would like to implement by myself in the future. For this reason, I'll do my best to make the app as generic as possible.
+
+This will make the implementation a little bit more complex but at the end of the day, it will allow me to extend the app with new functionalities without many issues in the future.
+
+Here's what I have in mind - instead of creating an app that has the sole purpose of controlling lights, I'll make it a generic home automation app, in which only one of the functions is the light controls. I imagine it like this:
+
+
+
+```
+Home (list of hubs/controls)
+   - Lights (list of light sources)
+       - Desk lights
+       - Ceiling
+       - Floor
+       ...
+   - Heating
+   - Plant monitoring
+       - Garden status
+       - Indoor plants
+       ...
+   - ...
+```
+
+# Bootstrapping the app
+
+[Docs](https://docs.expo.dev/get-started/create-a-new-app/)
+
+
+Now that I have a general idea, the next step is to bootstrap the application using ```create-expo-app```. I'll use the ```---template``` option which will yield several choices of how to bootstrap the project. Also, I'll name my app ```home``` for obvious reasons.
+
+```shell
+npx create-expo-app home --template
+```
+
+This will open a similar prompt. The choice is up to you, but I recommend starting with a blank application. In my case I'll select the ```Typescript``` option:
+
+```shell
+? Choose a template: › - Use arrow-keys. Return to submit.
+    Blank
+❯   Blank (TypeScript) - blank app with TypeScript enabled
+    Navigation (TypeScript)
+    Blank (Bare)
+```
+
+At this point, the app is created. I'll navigate inside the folder and I'll start it.
+
+```shell
+cd lights
+yarn start
+```
+
+This will start the Expo server and you'll get a similar output, containing a QR Code:
+
+![expo start](/static/images/expo-start.png)
+
+Now, navigate to the Expo Go app on your phone and start it. Select the Scan QR code option and wait for the initialization. 
+
+```Note: You should be on the same network as your computer. Using VPN will most probably not work.```
+
+After everything is loaded you should see your application:
+
+You can also test the live-reload by going to the ```App.tsx``` and changing the text. You should then see the new text on your phone right away.
+
+ <p align="center" style={{ display: 'flex', justifyContent: 'space-around' }}>
+    <Image alt="led-strip-soldered" src="/static/images/app-new.jpeg" width={256} height={128} />
+    <Image alt="led-strip-soldered" src="/static/images/app-new-text.jpeg" width={256} height={128} />
+</p>
+
+
+🎉 At this point, I have a working bare-bones native app that I can start building upon. In the next chapter of this blog post series, I will cover the actual implementation of the application.
