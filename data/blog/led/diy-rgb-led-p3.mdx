@@ -1,0 +1,290 @@
+---
+title: DIY desk RGB lights [Part 3] - Building the UI
+date: '2023-04-21'
+tags: ['iot', 'LED', 'c', 'js', 'smarthome', 'reactnative', 'react', 'prompt', 'expo']
+draft: false
+summary: Using spare parts I've collected over the years from all my half-finished projects to create a RGB backlight for my desk that I can control from my mobile phone
+---
+
+In the previous chapter, I created a bare Expo app with Typescript. In this part, I'll be going over the implementation of the UI.
+
+
+```I will intentionally omit any styling in the blog post as it would make it quite big, there's a link to the repo at the bottom where all the code can be seen.```
+
+# Data model and mocks
+
+I'll start the actual development from the data model of the app. Since I'm using Typescript I'll create two ```interfaces``` to handle the data of the app I described in the previous chapter. I'll start with the interface for a single hub - this is what I'll call a specific area of my home that I will be able to control with "Lights" being one of these areas. I'll place all the types in a ```types.ts``` file for now and I'll export them.
+
+```typescript
+export interface Hub {
+    name: string; // human readable name    
+    component: string; // screen that will handle this hub
+    enabled: boolean;
+}
+```
+
+I'll also define a type for my light source.
+
+```typescript
+export interface LightSource {
+    id: string; // unique identifier
+    name: string; // human readable name    
+    color: string; // hex
+    brightness: number; // [0,1]
+    enabled: boolean;
+    status: Status; // current status of communication with the resource
+    error?: string; // potential error with communication
+    notImplemented?: boolean; // temporary property, at first I'll only have one implemented light
+}
+```
+
+Helper enum to handle the status of a given resource, in my case a LightSource:
+
+```typescript
+export enum Status {
+    IDLE = 'idle',
+    LOADING = 'loading',
+    FAILED = 'failed',
+}
+```
+
+For now, since I will not be using a real database to fetch the data, I'll just create two TS files that will export dummy arrays of objects of these types. Since I'm lazy enough, I'll just paste the interfaces in ```ChatGPT``` and I'll ask it to generate some dummy data. This is what it came up with, I would say it's decent enough.
+
+
+```typescript
+export const homeControlData: Hub[] = [
+    {
+        name: 'Lights',
+        component: 'LightsList'
+    },
+    {
+        name: 'Heating',
+        component: 'HeatingList'
+    },
+   //...
+];
+```
+
+```typescript
+export const lightSources: LightSource[] = [
+   // actual light source:
+   {
+      id: 'desk',
+      name: 'Desk',
+      color: '#ffff00',
+      brightness: 100,
+      enabled: true,
+      status: Status.IDLE,
+  },
+  // dummy data
+  {
+    id: '2',
+    name: 'Ceiling Light',
+    color: '#00ff00',
+    brightness: 30,
+    enabled: true,
+    status: Status.OFFLINE,
+    error: 'Connection timeout',
+  }
+  // ...
+];
+```
+
+# App navigation
+
+Every app needs navigation and this one makes no difference. I've decided to use a simple approach. The root navigation of the app would be ```bottom tabs```, one tab for ```Settings```, where a Settings screen will be rendered, and one for ```Home```, where I would have a ```nested Stack navigator```. The stack navigator would then handle the rest of the navigation - HubsList -> LightsList -> LightDetails screens.
+
+Example navigation structure:
+
+```typescript
+// App.tsx
+const App = () => {
+  return (
+      <NavigationContainer>
+        <AppNavigator />
+      </NavigationContainer>
+  );
+};
+```
+
+```typescript
+// AppNavigator.tsx
+const Tab = createBottomTabNavigator();
+
+const AppNavigator = () => {
+    return (
+        <Tab.Navigator>
+            <Tab.Screen
+                name="Home"
+                component={HomeListStackNavigator}
+            />
+            <Tab.Screen
+                name="Settings"
+                component={SettingsScreen}
+            />
+        </Tab.Navigator>
+    );
+};
+```
+```ts
+// HomeStackNavigator.tsx
+export type HomeStackParamList = {
+    HomeList: undefined;
+    LightsList: undefined;
+    LightDetails: undefined;
+};
+
+const Stack = createNativeStackNavigator<HomeStackParamList>();
+
+const ListStackNavigator = () => {
+    return (
+        <Stack.Navigator>
+            <Stack.Screen
+                name="HomeList"
+                component={HomeList}
+            />
+            <Stack.Screen
+                name="LightsList"
+                component={LightsList}
+            />
+            <Stack.Screen
+                name="LightDetails"
+                component={LightDetails}
+            />
+        </Stack.Navigator>
+    );
+};
+```
+
+This would be the structure of my application. Now it's time to define the components that I've referenced. I'll start with the ```HomeList.tsx```, which will render the list of hubs and will navigate to the "component" field from the Hub interface.
+
+```ts
+// HomeList.tsx
+import { homeControlData } from '../data/homeData';
+
+interface HomeListProps {
+    navigation: NavigationProp<any, any>;
+}
+
+export default function HomeList({ navigation }: HomeListProps) {
+    const onNavigation = (component: string) => {
+        navigation.navigate(component);
+    };
+
+    return (
+        <FlatList
+            data={homeControlData}
+            renderItem={(item) => (
+                <HomeItem
+                    name={item.item.name}
+                    onNavigation={() => onNavigation(item.item.component)}
+                />
+            )}
+            keyExtractor={(item) => item.name}
+        />
+    );
+}
+```
+
+The ```LightsList.tsx``` will render the list of ```<LightSourceShort>``` components and on click on it, the app will navigate to the ```<LightDetails/>``` screen where I would place extended options for it.
+
+
+```ts
+// LightsList.tsx
+import { lightSourceData } from '../data/lightSourceData';
+
+interface HomeListProps {
+    navigation: NavigationProp<any, any>;
+}
+
+export default function List({ navigation }: HomeListProps) {
+    const onExpand = (item: LightSource) => {
+        navigation.navigate('LightDetails', { id: item.id });
+    };
+
+    return (
+        <>
+            <FlatList
+                data={lightSourceData}
+                renderItem={({ item }) => (
+                    <LightSourceShort item={item} onExpand={() => onExpand(item)} />
+                )}
+                keyExtractor={(item) => item.name}
+            />
+        </>
+    );
+}
+```
+
+In my list of lights I would like to display only the name of the light an on/off button and brightness selector on every line:
+
+
+```ts
+// LightSourceShort.tsx
+interface LightSourceShortProps {
+    item: LightSource;
+    onExpand: () => void;
+}
+
+export default function LightSourceShort({
+    item,
+    onExpand
+}: LightSourceShortProps) {
+    const toggleEnabled = () => {};
+    const onBrightnessChange = (value: number[]) => {};
+
+    return (
+        <View>
+            <TouchableOpacity onPress={onExpand}>
+                <View>
+                    <Text>
+                        {item.name}
+                    </Text>
+                </View>
+            </TouchableOpacity>
+        </View>
+    );
+}
+```
+
+When a certain light is clicked I want to navigate to a details screen where I'll place a color wheel and any other light source details.
+
+```ts
+// LightDetails.tsx
+interface LightDetailsProps
+    extends NativeStackScreenProps<HomeStackParamList, 'LightDetails'> {}
+
+export default function LightDetails({ route }: LightDetailsProps) {
+    const id = route.params.id;
+
+    const onColorChangeComplete = (color: string) => {};
+
+    return (
+        <View>
+            {item && (
+                <>
+                    <Text>{item.name}</Text>
+                    <ColorPicker
+                        onColorChangeComplete={onColorChangeComplete}
+                    />
+                </>
+            )}
+        </View>
+    );
+}
+```
+
+I've added an icon from ```@expo/vector-icons``` that will be used to control the light on/off state as well as a slider from ```@miblanchard/react-native-slider``` to control the brightness. Both have been extracted to separate reusable components:
+
+🎉 These are the screens that I ended up with after I added some styling to the components. I would say that it is pretty close to what I want... except that it's not yet functional. This would be the topic of the next chapter! 
+
+ <p align="center" style={{ display: 'flex', justifyContent: 'space-around' }}>
+    <Image alt="app-hub-list" src="/static/images/app-hub-list.jpeg" width={256} height={128} />
+    <Image alt="app-lights-list" src="/static/images/app-lights-expanded.jpeg" width={256} height={128} />
+    <Image alt="app-color-wheel" src="/static/images/app-color-wheel.jpeg" width={256} height={128} />
+</p>
+
+
+You can check all the source code [on GitHub](https://github.com/branimir-kirilov/desk-lights/tree/main/app).
+
+

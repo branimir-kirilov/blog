@@ -8,7 +8,7 @@ summary: Using spare parts I've collected over the years from all my half-finish
 
 # Intro
 
-In today's world, mobile applications have become an integral part of our daily lives. From ordering food to booking tickets, everything is just a tap away. In the previous post, I talked about building and programming an Arduino board. Now, it's time to take our project to the next level by integrating it with a mobile app. In this blog post, I will explore the exciting world of React Native and show you how to create a mobile app that can communicate with the Arduino board I previously built.
+In today's world, mobile applications have become an integral part of our daily lives. From ordering food to booking tickets, everything is just a tap away. In the previous post, I talked about building and programming an Arduino board. Now, it's time to take this project to the next level by integrating it with a mobile app. In this blog post, I will explore the exciting world of React Native and show you how to create a mobile app that can communicate with the Arduino board I previously wired up.
 
 # Prerequisites
 
@@ -23,7 +23,7 @@ If you don't have NodeJS, the first step is to download and install it:
 I'll be using Expo to bootstrap and develop our native application.
 
 
-The Expo platform revolves around React Native, offering a range of tools and services. Among its numerous capabilities, the most pertinent one for our current purposes is its ability to swiftly get you started on developing a React Native app. All you need is a phone or an emulator and a recent Node.js version.
+> The Expo platform revolves around React Native, offering a range of tools and services. Among its numerous capabilities, the most pertinent one for our current purposes is its ability to swiftly get you started on developing a React Native app. All you need is a phone or an emulator and a recent Node.js version.
 
 [Installation guide](https://docs.expo.dev/get-started/installation/)
 
@@ -32,14 +32,6 @@ The Expo platform revolves around React Native, offering a range of tools and se
 For the sake of easier debugging, I will use the Expo mobile app. This will allow me to run the app directly on my phone and I would not need to use an emulator.
 
 [Expo mobile app](https://play.google.com/store/apps/details?id=host.exp.exponent&hl=en_US)
-
-#### EAS
-
-I'll also be using EAS to generate an APK (I use Android) that I can install on my own phone after I'm done with the app... or at least with the first iteration of it.
-
-Expo EAS (Expo Application Services) is a suite of cloud-based tools and services offered by Expo to streamline the development, building, and publishing of React Native apps. It encompasses various features, such as faster builds, automated app signing, and publishing, advanced debugging, and crash reporting tools, among others. Expo EAS aims to simplify the React Native app development process and reduce the time and effort required to build, test, and deploy high-quality mobile applications.
-
-[EAS setup](https://docs.expo.dev/build/setup/) - I'll cover this step by step later in this post
 
 # Design and structure
 
@@ -78,7 +70,7 @@ Now, let's think about the layout of the application and the actual "design". I'
 
 #### Structure
 
-Apart from the light controls I have other ideas for home automation that I would like to implement by myself in the future. For this reason, I'll do my best to make the app as generic as possible.
+Apart from the light controls ```I have other ideas for home automation``` that I would like to implement by myself in the future. For this reason, I'll do my best to make the app as generic as possible.
 
 This will make the implementation a little bit more complex but at the end of the day, it will allow me to extend the app with new functionalities without many issues in the future.
 
@@ -148,3 +140,5 @@ You can also test the live-reload by going to the ```App.tsx``` and changing the
 
 
 🎉 At this point, I have a working bare-bones native app that I can start building upon. In the next chapter of this blog post series, I will cover the actual implementation of the application.
+
+You can check all the source code [on GitHub](https://github.com/branimir-kirilov/desk-lights/tree/main/app).
