@@ -9,11 +9,14 @@ summary: Build the data model and navigation of the app
 In the previous chapter, I created a bare Expo app with Typescript. In this part, I'll be going over the implementation of the UI.
 
 
-```I will intentionally omit any styling in the blog post as it would make it quite big, there's a link to the repo at the bottom where all the code can be seen.```
+I will intentionally omit any styling in the blog post as it would make it quite big, there's a link to the repo at the bottom where all the code can be seen.
 
 # Data model and mocks
 
-I'll start the actual development from the data model of the app. Since I'm using Typescript I'll create two ```interfaces``` to handle the data of the app I described in the previous chapter. I'll start with the interface for a single hub - this is what I'll call a specific area of my home that I will be able to control with "Lights" being one of these areas. I'll place all the types in a ```types.ts``` file for now and I'll export them.
+
+### Defining interfaces
+
+I'll start the actual development from the data model of the app. Since I'm using Typescript I'll create two ```interfaces``` to model the data of the app I described in the previous chapter. I'll start with the interface for a single ```hub``` - this is what I'll call a specific area of my home that I will be able to control with "Lights" being one of these areas. I'll place all the types in a ```types.ts``` file for now and I'll export them.
 
 ```typescript
 export interface Hub {
@@ -47,6 +50,7 @@ export enum Status {
     FAILED = 'failed',
 }
 ```
+### Genrating mock data
 
 For now, since I will not be using a real database to fetch the data, I'll just create two TS files that will export dummy arrays of objects of these types. Since I'm lazy enough, I'll just paste the interfaces in ```ChatGPT``` and I'll ask it to generate some dummy data. This is what it came up with, I would say it's decent enough.
 
@@ -92,9 +96,10 @@ export const lightSources: LightSource[] = [
 
 # App navigation
 
+### Navigation structure
+
 Every app needs navigation and this one makes no difference. I've decided to use a simple approach. The root navigation of the app would be ```bottom tabs```, one tab for ```Settings```, where a Settings screen will be rendered, and one for ```Home```, where I would have a ```nested Stack navigator```. The stack navigator would then handle the rest of the navigation - HubsList -> LightsList -> LightDetails screens.
 
-Example navigation structure:
 
 ```typescript
 // App.tsx
@@ -155,6 +160,7 @@ const ListStackNavigator = () => {
     );
 };
 ```
+### Screens and components
 
 This would be the structure of my application. Now it's time to define the components that I've referenced. I'll start with the ```HomeList.tsx```, which will render the list of hubs and will navigate to the "component" field from the Hub interface.
 

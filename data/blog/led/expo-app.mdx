@@ -8,7 +8,7 @@ summary: Using Midjourney to generate ideas for app UI. Creating the app with Ex
 
 # Intro
 
-In today's world, mobile applications have become an integral part of our daily lives. From ordering food to booking tickets, everything is just a tap away. In the previous post, I talked about building and programming an Arduino board. Now, it's time to take this project to the next level by integrating it with a mobile app. In this blog post, I will explore the exciting world of React Native and show you how to create a mobile app that can communicate with the Arduino board I previously wired up.
+In today's world, mobile applications have become an integral part of our daily lives. From ordering food to booking tickets, everything is just a tap away. In the previous post, I talked about building and programming an ESP board. Now, it's time to take this project to the next level by integrating it with a mobile app. In this blog post, I will explore the exciting world of React Native and show you how to create a mobile app that can communicate with the board I previously wired up.
 
 # Prerequisites
 
@@ -47,7 +47,7 @@ The main features that I need to support are:
 2. Color wheel/color picker
 3. Brightness slider 
 
-For the sake of abstraction and reusability, I can also implement the functionality to add multiple light sources, each one of them having these options + a name.
+For the sake of abstraction and reusability, I can also implement the functionality to ```add multiple light``` sources, each one of them having these options + a name.
 
 ### AI to the rescue!
 
@@ -68,13 +68,13 @@ Now, let's think about the layout of the application and the actual "design". I'
 </p>
 
 
-#### Structure
+#### Structure and purpose
 
 Apart from the light controls ```I have other ideas for home automation``` that I would like to implement by myself in the future. For this reason, I'll do my best to make the app as generic as possible.
 
 This will make the implementation a little bit more complex but at the end of the day, it will allow me to extend the app with new functionalities without many issues in the future.
 
-Here's what I have in mind - instead of creating an app that has the sole purpose of controlling lights, I'll make it a generic home automation app, in which only one of the functions is the light controls. I imagine it like this:
+Here's what I have in mind - instead of creating an app that has the sole purpose of controlling lights, ```I'll make it a generic home automation app```, in which only one of the functions is the light controls. I imagine it like this:
 
 
 
