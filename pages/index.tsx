@@ -9,6 +9,7 @@ import { NewsletterForm } from 'pliny/ui/NewsletterForm'
 import { allBlogs } from 'contentlayer/generated'
 import type { Blog } from 'contentlayer/generated'
 import { RoughNotation } from 'react-rough-notation'
+import Typewriter from 'typewriter-effect'
 
 const MAX_DISPLAY = 5
 
@@ -24,16 +25,20 @@ export default function Home({ posts }: InferGetStaticPropsType<typeof getStatic
     <>
       <PageSEO title={siteMetadata.title} description={siteMetadata.description} />
       <div className="divide-y divide-gray-200 dark:divide-gray-700">
-        <div className="space-y-2 pt-6 pb-8 md:space-y-5">
+        <div className="space-y-2 pb-8 pt-6 md:space-y-5">
           <h1 className="text-3xl font-extrabold leading-9 tracking-tight text-gray-900 dark:text-gray-100 sm:text-4xl sm:leading-10 md:text-6xl md:leading-14">
-            Hi, I'm{' '}
-            <span className="text-primary-color-500 dark:text-primary-color-dark-500">
-              Branimir
-            </span>
+            <Typewriter
+              onInit={(typewriter) => {
+                typewriter
+                  .typeString(`Hi, I'm `)
+                  .typeString('<span style="color: #DE1D8D;">Braminir!</span>')
+                  .deleteChars(6)
+                  .typeString('<span style="color: #DE1D8D;">nimir!</span>')
+                  .pauseFor(2500)
+                  .start()
+              }}
+            />
           </h1>
-          <p className="text-lg leading-7 text-gray-500 dark:text-gray-400">
-            Welcome to my personal website. Here you'll find more information about me.
-          </p>
         </div>
         <ul className="divide-y divide-gray-200 dark:divide-gray-700">
           {!posts.length && 'No posts found.'}
