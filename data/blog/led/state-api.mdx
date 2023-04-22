@@ -2,13 +2,13 @@
 title: DIY desk RGB lights [Part 4] - State management and API calls
 date: '2023-04-22'
 tags: ['iot', 'LED', 'c', 'js', 'smarthome', 'reactnative', 'react', 'prompt', 'expo']
-draft: false
+draft: true
 summary: Using Redux as a state manager and dispatching API calls.
 ---
 
 # Modifying the Wemos Server
 
-In the first chapter I created a server on the Wemos board that listens for ```GET``` calls on ```/desk/rgb```. I'll change this to a ```POST``` request on light/desk instead and I'll past the params in the body of the request. The reason is that one day I might have multiple light sources on multiple devices.
+The initial chapter involved setting up a server on the Wemos board that listens for ```GET``` calls specifically on ```/desk/rgb```. However, for the sake of consistency in the event of multiple light sources on multiple devices, I intend to modify this to a ```POST``` request on ```light/desk```, with the parameters being passed in the request body.
 
 ```c
 // changing the mapping
@@ -16,30 +16,7 @@ server.on("/lights/desk", HTTP_POST, handleLightUpdate);
 ```
 
 ```c
-// sets the pin values
-void writeColor(int r, int g, int b, float brightness)
-{
-    if (brightness < 0)
-    {
-        brightness = 0;
-    }
-    else if (brightness > 1)
-    {
-        brightness = 1;
-    }
-
-    // toInt defaults to 0 if no valid conversion is possible
-    int rValue = validColor(r * brightness);
-    int gValue = validColor(g * brightness);
-    int bValue = validColor(b * brightness);
-    analogWrite(REDPIN, rValue);
-    analogWrite(GREENPIN, gValue);
-    analogWrite(BLUEPIN, bValue);
-
-    sendResponse(rValue, gValue, bValue, brightness);
-}
-
-// POST handler
+// the updated POST handler that reads the JSON body
 void handleLightUpdate()
 {
     // Check if body received
@@ -61,23 +38,18 @@ void handleLightUpdate()
 }
 ```
 
-[Full device code](https://github.com/branimir-kirilov/desk-lights/blob/main/device/device.ino)
-
-
-
+I have also extracted the code that sets the pin values to a different method - ```writeColor``` you can check the [full device code](https://github.com/branimir-kirilov/desk-lights/blob/main/device/device.ino) for its implementation.
 
 
 
 # State management
 
-As I mentioned earlier I plan to extend this application in the future, so I would need a state manager to keep things clean.
 
-I decided that I'll use Redux Toolkit to handle this. I followed this guide in order to install all the necessary packages.
+Maintaining a tidy and organized codebase is essential when developing applications, especially those that are intended to be expanded over time. As I continue to build out my home automation project, I knew that effective state management would be a key factor in keeping the project maintainable in the long term.
 
-[Redux quick start](https://redux-toolkit.js.org/tutorials/quick-start)
+After some research, I decided to utilize Redux Toolkit to handle state management. The toolkit provides a set of tools and guidelines that make it easier to write Redux code while also improving performance and reducing boilerplate.
 
-After everything is installed I created a ```/store``` folder. The bottom part is just boilerplate to get my state started.
-
+To get started, I followed the Redux Toolkit's [quick start guide](https://redux-toolkit.js.org/tutorials/quick-start) which provided me with all the necessary information and packages required to use Redux Toolkit. Once all the necessary packages were installed, I created a ```/store``` folder to initialize my state, and I defined the rootReducer in ```rootReducer.ts```, which combines all the reducers used in the application. This centralizes the application's state and makes it more accessible to all components.
 
 ```typescript
 // store.ts
@@ -112,9 +84,11 @@ export const rootReducer = combineReducers({
 });
 ```
 
-Now it's time to define the ```lightsSlice```, or the part of the store that will manage the state of the lights in my application. I'll place all relevant files in ```store/lights```. Since my light state management is basically simple CRUD operations I can use the [createEntityAdapter](https://redux-toolkit.js.org/api/createEntityAdapter). 
+From there, I defined the ```lightsSlice``` - the part of the store that manages the state of the lights in my application. To keep things organized, I placed all relevant files in ```store/lights```. As my light state management essentially consisted of simple CRUD operations, I made use of the [createEntityAdapter](https://redux-toolkit.js.org/api/createEntityAdapter) provided by Redux Toolkit. This generated a set of pre-built reducers and selectors for performing CRUD operations on a normalized state structure containing instances of a particular type of data object. In my case - ```EntityState<LightSouce>```.
 
-> createEntityAdapter generates set of prebuilt reducers and selectors for performing CRUD operations on a normalized state structure containing instances of a particular type of data object
+The lightsSlice also includes an ```extraReducers``` field to handle the [async thunk](https://redux-toolkit.js.org/api/createAsyncThunk) that will load the lights list (I'll write it later). Additionally, I defined the lightUpdated action which uses the lightsAdapter's ```updateOne``` to update an individual light.
+
+Finally, the code exports the lightUpdated ```action creator```, which can be used to update a single light entity within the store. The lightSelectors constant uses the ```getSelectors``` function from createEntityAdapter to generate a set of selectors for querying the lights slice of the store. These selectors can be used to access the ids and entities fields of the lights state, as well as any additional state fields added to the LightsState interface. By using these selectors, components can easily retrieve and display relevant portions of the store's state.
 
 ```js
 // lightsSlice.ts
@@ -169,7 +143,35 @@ export const lightSelectors = lightsAdapter.getSelectors<RootState>(
 export default lightsSlice.reducer;
 ```
 
-As you can see, I've also used the extraReducers field to handle the async thunk that will "load" my lights list.
+In addition to the slice code I previously discussed, I'll also be implementing a service layer to handle API calls and defining hooks to access the state from React components. For now it's only a dummy function, because I don't have an actual API to fetch this data from, so I'll just resolve the promise with the data I defined earlier in the static JSON file:
+
+```typescript
+// LightService.ts
+...
+import Constants from 'expo-constants';
+
+export default class LightService {
+    // A mock function to mimic making an async GET request for light sources data
+    static fetchLightsData() {
+        return new Promise<{ data: LightSource[] }>((resolve) =>
+            setTimeout(() => resolve({ data: lightsListData }), 0)
+        );
+    }
+}
+```
+
+I'll also have to define the hooks that I'll use to access the state from my React components:
+
+```typescript
+// hooks.ts
+import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
+import type { RootState, AppDispatch } from '../store/store';
+
+export const useAppDispatch = () => useDispatch<AppDispatch>();
+export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
+```
+
+With the service layer defined, I can now create the async thunk that makes an "API call" using LightService and returns the response:
 
 ```js
 // lightsThunks.ts
@@ -182,35 +184,33 @@ export const fetchLightsData = createAsyncThunk(
 );
 ```
 
-I'll also be defining a service layer that will handle my actual API calls by using fetch. Of course, the api call can be in the async thunk itself , but I like to keep it separated. I'll also use the same service to dispatch the API call to update the light color/brightness.
+Now I can test my store by changing my ```<LightsList.tsx />``` component  to dispatch a fetchLightsData() action instead of importing the light data from the static file:
 
 ```typescript
-// LightService.ts
-...
-import Constants from 'expo-constants';
+// LightsList.tsx
+import { useEffect } from 'react';
+import { useAppDispatch, useAppSelector } from '../../hooks/hooks';
+import { fetchLightsData } from '../../store/lights/lightsThunks';
+import { lightSelectors } from '../../store/lights/lightsSlice';
 
-const WEMOS_URL = Constants?.expoConfig?.extra?.WEMOS_HOST;
+export default function LightsList({ navigation }: LightsListProps) {
+    const lights = useAppSelector(lightSelectors.selectAll); // selects all lights
+    const dispatch = useAppDispatch();
 
-export default class LightService {
-    // A mock function to mimic making an async GET request for light sources data
-    static fetchLightsData() {
-        return new Promise<{ data: LightSource[] }>((resolve) =>
-            setTimeout(() => resolve({ data: lightsListData }), 0)
-        );
-    }
+    useEffect(() => {
+        // dispatch an action to "fetch" the lights them when the component mounts
+        dispatch(fetchLightsData());
+    }, []);
+
+    return (
+        <>
+            <FlatList
+                data={lights} // use the lights
+               ....
 }
 ```
 
-I'll also have to define the hooks that I'll use to access the state from the React components:
-
-```typescript
-// hooks.ts
-import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
-import type { RootState, AppDispatch } from '../store/store';
-
-export const useAppDispatch = () => useDispatch<AppDispatch>();
-export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
-```
+TODO: Check names of components and fix props - items etc
 
 
 #### EAS
