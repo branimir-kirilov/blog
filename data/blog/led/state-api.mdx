@@ -1,14 +1,14 @@
 ---
 title: DIY desk RGB lights [Part 4] - State management and API calls
 date: '2023-04-22'
-tags: ['iot', 'LED', 'c', 'js', 'smarthome', 'reactnative', 'react', 'prompt', 'expo']
-draft: true
+tags: ['iot', 'LED', 'c', 'js', 'smarthome', 'reactnative', 'react', 'prompt', 'expo', 'redux', '@redux/toolkit']
+draft: false
 summary: Using Redux as a state manager and dispatching API calls.
 ---
 
 # Modifying the Wemos Server
 
-The initial chapter involved setting up a server on the Wemos board that listens for ```GET``` calls specifically on ```/desk/rgb```. However, for the sake of consistency in the event of multiple light sources on multiple devices, I intend to modify this to a ```POST``` request on ```light/desk```, with the parameters being passed in the request body.
+The initial chapter involved setting up a server on the Wemos board that listens for ```GET``` requests on ```/desk/rgb```. However, for the sake of consistency in the event of multiple light sources on multiple devices, I intend to modify this to a ```POST``` request on ```light/desk```, with the parameters being passed in the request body.
 
 ```c
 // changing the mapping
@@ -44,12 +44,15 @@ I have also extracted the code that sets the pin values to a different method - 
 
 # State management
 
+## Why?
 
 Maintaining a tidy and organized codebase is essential when developing applications, especially those that are intended to be expanded over time. As I continue to build out my home automation project, I knew that effective state management would be a key factor in keeping the project maintainable in the long term.
 
-After some research, I decided to utilize Redux Toolkit to handle state management. The toolkit provides a set of tools and guidelines that make it easier to write Redux code while also improving performance and reducing boilerplate.
+After some research, I decided to utilize ```Redux Toolkit``` to handle state management. The toolkit provides a set of tools and guidelines that make it easier to write Redux code while also improving performance and reducing boilerplate.
 
-To get started, I followed the Redux Toolkit's [quick start guide](https://redux-toolkit.js.org/tutorials/quick-start) which provided me with all the necessary information and packages required to use Redux Toolkit. Once all the necessary packages were installed, I created a ```/store``` folder to initialize my state, and I defined the rootReducer in ```rootReducer.ts```, which combines all the reducers used in the application. This centralizes the application's state and makes it more accessible to all components.
+## Redux boilerplate
+
+To get started, I followed the Redux Toolkit's [quick start guide](https://redux-toolkit.js.org/tutorials/quick-start) which provided me with all the necessary information and packages required to use it. Once all the necessary packages were installed, I created a ```/store``` folder to initialize my state, and I defined the rootReducer in ```rootReducer.ts```, which combines all the reducers used in the application. This centralizes the application's state and makes it more accessible to all components.
 
 ```typescript
 // store.ts
@@ -84,11 +87,15 @@ export const rootReducer = combineReducers({
 });
 ```
 
-From there, I defined the ```lightsSlice``` - the part of the store that manages the state of the lights in my application. To keep things organized, I placed all relevant files in ```store/lights```. As my light state management essentially consisted of simple CRUD operations, I made use of the [createEntityAdapter](https://redux-toolkit.js.org/api/createEntityAdapter) provided by Redux Toolkit. This generated a set of pre-built reducers and selectors for performing CRUD operations on a normalized state structure containing instances of a particular type of data object. In my case - ```EntityState<LightSouce>```.
+## Lights slice
+
+From there, I defined the ```lightsSlice``` - the part of the store that manages the state of the lights in my application. To keep things organized, I placed all relevant files in ```store/lights```. As my light state management essentially consisted of simple CRUD operations, I made use of the [createEntityAdapter](https://redux-toolkit.js.org/api/createEntityAdapter) provided by Redux Toolkit. This generated a set of ```pre-built reducers and selectors``` for performing CRUD operations on a normalized state structure containing instances of a particular type of data object. In my case - ```EntityState<LightSouce>```.
+
+[Normalizing state shape](https://redux.js.org/usage/structuring-reducers/normalizing-state-shape)
 
 The lightsSlice also includes an ```extraReducers``` field to handle the [async thunk](https://redux-toolkit.js.org/api/createAsyncThunk) that will load the lights list (I'll write it later). Additionally, I defined the lightUpdated action which uses the lightsAdapter's ```updateOne``` to update an individual light.
 
-Finally, the code exports the lightUpdated ```action creator```, which can be used to update a single light entity within the store. The lightSelectors constant uses the ```getSelectors``` function from createEntityAdapter to generate a set of selectors for querying the lights slice of the store. These selectors can be used to access the ids and entities fields of the lights state, as well as any additional state fields added to the LightsState interface. By using these selectors, components can easily retrieve and display relevant portions of the store's state.
+Finally, the code exports the lightUpdated ```action creator```, which can be used to update a single light entity within the store. The lightSelectors constant uses the ```getSelectors``` function from createEntityAdapter to generate a set of selectors for querying the lights slice of the store. These selectors can be used to access entity fields of the lights state, as well as any additional state fields added to the LightsState interface. By using these selectors, components can easily retrieve and display relevant portions of the store's state.
 
 ```js
 // lightsSlice.ts
@@ -143,7 +150,9 @@ export const lightSelectors = lightsAdapter.getSelectors<RootState>(
 export default lightsSlice.reducer;
 ```
 
-In addition to the slice code I previously discussed, I'll also be implementing a service layer to handle API calls and defining hooks to access the state from React components. For now it's only a dummy function, because I don't have an actual API to fetch this data from, so I'll just resolve the promise with the data I defined earlier in the static JSON file:
+### Service layer
+
+In addition to the lightsSlice I previously discussed, I'll also be implementing a ```service class``` to handle API calls. For now, it's only a dummy function because I don't have an actual API to fetch this data from, so I'll just resolve the promise with the data I defined earlier in the static JSON file. But someday I might want to call an actual server for this, so this abstraction would come in handy. I'll also be using the same class later to make the API calls to my device.
 
 ```typescript
 // LightService.ts
@@ -159,8 +168,9 @@ export default class LightService {
     }
 }
 ```
+### Hooks
 
-I'll also have to define the hooks that I'll use to access the state from my React components:
+I'll also have to define the `hooks` that I'll use to access the state from my React components:
 
 ```typescript
 // hooks.ts
@@ -183,8 +193,9 @@ export const fetchLightsData = createAsyncThunk(
     }
 );
 ```
+### Using the store
 
-Now I can test my store by changing my ```<LightsList.tsx />``` component  to dispatch a fetchLightsData() action instead of importing the light data from the static file:
+Now, I can test my store by changing my ```<LightsList.tsx />``` component  to dispatch a ```fetchLightsData``` action instead of importing the light data from the static file:
 
 ```typescript
 // LightsList.tsx
@@ -210,20 +221,136 @@ export default function LightsList({ navigation }: LightsListProps) {
 }
 ```
 
-TODO: Check names of components and fix props - items etc
+🎉 And voila, now the ```FlatList``` in ```<LightsList />``` is populated from the state:
+
+ <p align="center" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+    <Image alt="app-list-store" src="/static/images/app-list-store.jpeg" width={256} height={128} />
+</p>
+
+In the same manner, I can use a selector to get a light source entity by an id in the ```<LightSourceDetails />``` component:
+
+```typescript
+export default function LightDetails({ route }: LightDetailsProps) {
+    const id = route.params.id;
+    const dispatch = useAppDispatch();
+    const item = useAppSelector((state) => selectLightById(state, id));
+    // use the item
+}
+```
+
+Neat! Now all my components are updated when the state is changed.
+
+## Calling the server
+
+ I now have to define the actual update of a ```LightSource``` entity. I'll do this by defining a new async thunk first. It will be calling my ```LightService``` again, but this time, I'll be doing the API call to the WEMOS server with the params of the entity:
 
 
-#### EAS
+```typescript
+// lightThunks.ts
+export const updateLight = createAsyncThunk<
+    void,
+    { id: string, changes: Partial<LightSource> },
+    { rejectValue: string }
+>('lights/updateLight', async ({ id, changes }, { getState, rejectWithValue }) => {
+    try {
+        // get a light from the state
+        const state = getState() as RootState;
+        const light = state.lights.entities[id];
+        if (!light) {
+          throw new Error(`Light with id ${id} not found`);
+        }
 
-I'll also be using EAS to generate an APK (I use Android) that I can install on my own phone after I'm done with the app... or at least with the first iteration of it. Though, I 
+        // get all of the light properties including the changed ones and call the service
+        await LightService.changeLight({ ...light, ...changes });
+    } catch (error) {
+        return rejectWithValue('Error updating light');
+    }
+});
+```
 
-> Expo EAS (Expo Application Services) is a suite of cloud-based tools and services offered by Expo to streamline the development, building, and publishing of React Native apps. It encompasses various features, such as faster builds, automated app signing, and publishing, advanced debugging, and crash reporting tools, among others. Expo EAS aims to simplify the React Native app development process and reduce the time and effort required to build, test, and deploy high-quality mobile applications.
+Then, I'll define a new static function in my service. It will call the Wemos server with the RGB values and brightness of the light entity.
 
-[EAS setup](https://docs.expo.dev/build/setup/) - I'll cover this step by step later in this post
+```typescript
+// LightService.ts
+...
+const WEMOS_URL = Constants?.expoConfig?.extra?.WEMOS_HOST;
+
+static changeLight(data: LightSource): Promise<Response> {
+    const url = `${WEMOS_URL}/lights/${data.id}`;
+    const req: RequestInit = {
+        method: 'POST',
+        body: JSON.stringify({
+            ...hexToRgb(data.color),
+            brightness: data.brightness / 100
+        })
+    };
+
+    return fetch(url, req);
+}
+```
+
+I've injected the WEMOS_HOST through my expo config. There are other ways to do this and you can read about them [here](https://docs.expo.dev/guides/environment-variables/).
+
+### Disclaimer
+
+Apparently, the application needs to make HTTP requests to a local server running on a board. Typically, this would require authentication and authorization, but since the app is for personal use only, these security measures are not *that* necessary. The server is only accessible within the local network, so only those connected to it and aware of the server's IP address and port can interact with it. While this may be considered a form of "security through obscurity", the potential risk is minimal as the worst that could happen is the lights on the my desk may change color or turn on when they shouldn't. While this may be inconvenient and result in higher electricity bills, I'm willing to accept the risk. :) ```However, if the application deals with sensitive data, it is not recommended to use this solution. It's important to prioritize security, especially when dealing with IoT and there are already a ton of solutions that do this out of the box (e.g. AWS IoT Core)```
+
+### Updating the lights slice
+
+Now, it's time to make the ```lightSlice``` aware of this new async thunk that I created. I'll make use of the ```extraReducer``` and the ```updateOne``` that is also predefined by the ```createEntityAdapter```. When the promise status changes, I'll also update the entity `Status` field. I'll be using this to create some loading overlays, as network calls may take time.
 
 
+```diff
+// lightsSlice.ts
++    .addCase(updateLight.pending, (state, action) => {
++        lightsAdapter.updateOne(state, { 
++            id: action.meta.arg.id,
++            changes: { status: Status.LOADING }
++        })
++    })
++    .addCase(updateLight.fulfilled, (state, action) => {
++        lightsAdapter.updateOne(state, {
++            id: action.meta.arg.id,
++            changes: { status: Status.IDLE, ...action.meta.arg.changes }
++        })
++    })
++    .addCase(updateLight.rejected, (state, action) => {
++        lightsAdapter.updateOne(state, {
++            id: action.meta.arg.id,
++            changes: { status: Status.FAILED }
++        })
++    });
+```
+
+## Dispatching update action
+
+I'll add a handler for the color picker in my ```<LightSourceDetails />``` screen and I'll dispatch the action from there. It's a good idea to use the useCallback hook to memoize this function, otherwise, it will be created every time the component renders and this may cause performance impact.
 
 
+```diff
+// LightSourceDetails.tsx
++        const onColorChangeComplete = useCallback((color: string) => {
++               dispatch(updateLight({ id: item.id, changes: { color } }));
++       }, [item, dispatch, updateLight]);
 
+        ...
+            <ColorPicker
++               onColorChangeComplete={onColorChangeComplete}
+            />
+        ...
+```
 
-Apparently, the app has to make HTTP requests to the server that's running on the board. Usually, this would need some sort of authentication and authorization, but in my case I'm building this app only for myself. The server is running in my local network and I don't have any port forwarding. This means that only people connected to my network can interact with the server, provided that they know on which ip address and port it runs ( security through obscurity? :) ). At the end of the day, even if someone knows where the server is running, the most harm he can do is change the color of the lights on my desk or enable them when they shouldn't be. This would be annoying and would ultimately increase my electricity bills, but I'm willing to take the risk. ```If the application you're bulding is dealing with any kind of sensitive data, I don't recommend the solution from this blog post. Security is important, and we should always think about it especially when dealing with IoT.```
+## Testing the integration
+
+And now it's time to test the whole thing! I have to make sure my device is connected to the power outlet and the expectation is that whenever I change the color by dragging the wheel the color will change ... and ... it does! 🎉
+
+## Demo
+
+The next step is to make the remaining buttons and sliders dispatch the ```updateLight``` action and finish the styling of the UI. After I did this, I would say I'm pretty much done with the first iteration of this application. I can now enable/disable the desk light, and change its brightness and color. You can check the video below on how it works. 
+
+<video src="/static/images/demo.mov" width="640" height="360" controls muted />
+
+You can find all the source code [on GitHub](https://github.com/branimir-kirilov/desk-lights/tree/main/app).
+
+Since the application is still dependent on the Expo server to function, I'll need to generate an APK that I can install on my actual Android device. In the upcoming part of this blog series, I will explain the steps for doing so by using EAS Build.
+
