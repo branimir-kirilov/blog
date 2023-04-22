@@ -1,0 +1,229 @@
+---
+title: DIY desk RGB lights [Part 4] - State management and API calls
+date: '2023-04-22'
+tags: ['iot', 'LED', 'c', 'js', 'smarthome', 'reactnative', 'react', 'prompt', 'expo']
+draft: false
+summary: Using Redux as a state manager and dispatching API calls.
+---
+
+# Modifying the Wemos Server
+
+In the first chapter I created a server on the Wemos board that listens for ```GET``` calls on ```/desk/rgb```. I'll change this to a ```POST``` request on light/desk instead and I'll past the params in the body of the request. The reason is that one day I might have multiple light sources on multiple devices.
+
+```c
+// changing the mapping
+server.on("/lights/desk", HTTP_POST, handleLightUpdate);
+```
+
+```c
+// sets the pin values
+void writeColor(int r, int g, int b, float brightness)
+{
+    if (brightness < 0)
+    {
+        brightness = 0;
+    }
+    else if (brightness > 1)
+    {
+        brightness = 1;
+    }
+
+    // toInt defaults to 0 if no valid conversion is possible
+    int rValue = validColor(r * brightness);
+    int gValue = validColor(g * brightness);
+    int bValue = validColor(b * brightness);
+    analogWrite(REDPIN, rValue);
+    analogWrite(GREENPIN, gValue);
+    analogWrite(BLUEPIN, bValue);
+
+    sendResponse(rValue, gValue, bValue, brightness);
+}
+
+// POST handler
+void handleLightUpdate()
+{
+    // Check if body received
+    if (server.hasArg("plain") == false)
+    {
+        sendBadRequestResponse();
+        return;
+    }
+
+    StaticJsonDocument<200> jsonDoc;
+    deserializeJson(jsonDoc, server.arg("plain"));
+
+    int r = jsonDoc["r"].as<int>();
+    int g = jsonDoc["g"].as<int>();
+    int b = jsonDoc["b"].as<int>();
+    float brightness = jsonDoc["brightness"].as<float>();
+
+    writeColor(r, g, b, brightness);
+}
+```
+
+[Full device code](https://github.com/branimir-kirilov/desk-lights/blob/main/device/device.ino)
+
+
+
+
+
+
+# State management
+
+As I mentioned earlier I plan to extend this application in the future, so I would need a state manager to keep things clean.
+
+I decided that I'll use Redux Toolkit to handle this. I followed this guide in order to install all the necessary packages.
+
+[Redux quick start](https://redux-toolkit.js.org/tutorials/quick-start)
+
+After everything is installed I created a ```/store``` folder. The bottom part is just boilerplate to get my state started.
+
+
+```typescript
+// store.ts
+import {
+    configureStore,
+    ThunkAction,
+    Action,
+} from '@reduxjs/toolkit';
+import { rootReducer } from './rootReducer';
+
+export const store = configureStore({
+    reducer: rootReducer,
+});
+
+export type AppDispatch = typeof store.dispatch;
+export type RootState = ReturnType<typeof store.getState>;
+export type AppThunk<ReturnType = void> = ThunkAction<
+    ReturnType,
+    RootState,
+    unknown,
+    Action<string>
+>;
+```
+
+```js
+// rootReducer.ts
+import { combineReducers } from '@reduxjs/toolkit';
+import lightsSlice from './lights/lightsSlice';
+
+export const rootReducer = combineReducers({
+    lights: lightsSlice
+});
+```
+
+Now it's time to define the ```lightsSlice```, or the part of the store that will manage the state of the lights in my application. I'll place all relevant files in ```store/lights```. Since my light state management is basically simple CRUD operations I can use the [createEntityAdapter](https://redux-toolkit.js.org/api/createEntityAdapter). 
+
+> createEntityAdapter generates set of prebuilt reducers and selectors for performing CRUD operations on a normalized state structure containing instances of a particular type of data object
+
+```js
+// lightsSlice.ts
+import { createEntityAdapter, createSlice, EntityState } from '@reduxjs/toolkit';
+import { RootState } from '../store';
+import { LightSource, Status } from '../../types/types';
+import { fetchLightsData } from './lightsThunks';
+
+interface LightsState extends EntityState<LightSource> {
+    status: Status;
+    error: string | null;
+}
+
+const lightsAdapter = createEntityAdapter<LightSource>({
+    selectId: (lightSource) => lightSource.id,
+    // temporarily sort desc by notImplemented field
+    sortComparer: (a, b) => Number(b.notImplemented) - Number(a.notImplemented)
+});
+
+export const lightsSlice = createSlice({
+    name: 'lightsSlice',
+    initialState: lightsAdapter.getInitialState<LightsState>({
+        ids: [],
+        entities: {},
+        status: Status.IDLE,
+        error: null,
+    }),
+    reducers: {
+        lightUpdated: lightsAdapter.updateOne,
+    },
+    extraReducers: (builder) => {
+        builder
+            .addCase(fetchLightsData.pending, (state) => {
+                state.status = Status.LOADING;
+            })
+            .addCase(fetchLightsData.fulfilled, (state, action) => {
+                state.status = Status.IDLE;
+                lightsAdapter.upsertMany(state, action.payload);
+            })
+            .addCase(fetchLightsData.rejected, (state) => {
+                state.status = Status.FAILED;
+            })
+    },
+});
+
+export const { lightUpdated } = lightsSlice.actions;
+
+export const lightSelectors = lightsAdapter.getSelectors<RootState>(
+    (state) => state.lights
+)
+
+export default lightsSlice.reducer;
+```
+
+As you can see, I've also used the extraReducers field to handle the async thunk that will "load" my lights list.
+
+```js
+// lightsThunks.ts
+export const fetchLightsData = createAsyncThunk(
+    'lights/fetchLightsData',
+    async () => {
+        const response = await LightService.fetchLightsData();
+        return response.data;
+    }
+);
+```
+
+I'll also be defining a service layer that will handle my actual API calls by using fetch. Of course, the api call can be in the async thunk itself , but I like to keep it separated. I'll also use the same service to dispatch the API call to update the light color/brightness.
+
+```typescript
+// LightService.ts
+...
+import Constants from 'expo-constants';
+
+const WEMOS_URL = Constants?.expoConfig?.extra?.WEMOS_HOST;
+
+export default class LightService {
+    // A mock function to mimic making an async GET request for light sources data
+    static fetchLightsData() {
+        return new Promise<{ data: LightSource[] }>((resolve) =>
+            setTimeout(() => resolve({ data: lightsListData }), 0)
+        );
+    }
+}
+```
+
+I'll also have to define the hooks that I'll use to access the state from the React components:
+
+```typescript
+// hooks.ts
+import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
+import type { RootState, AppDispatch } from '../store/store';
+
+export const useAppDispatch = () => useDispatch<AppDispatch>();
+export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
+```
+
+
+#### EAS
+
+I'll also be using EAS to generate an APK (I use Android) that I can install on my own phone after I'm done with the app... or at least with the first iteration of it. Though, I 
+
+> Expo EAS (Expo Application Services) is a suite of cloud-based tools and services offered by Expo to streamline the development, building, and publishing of React Native apps. It encompasses various features, such as faster builds, automated app signing, and publishing, advanced debugging, and crash reporting tools, among others. Expo EAS aims to simplify the React Native app development process and reduce the time and effort required to build, test, and deploy high-quality mobile applications.
+
+[EAS setup](https://docs.expo.dev/build/setup/) - I'll cover this step by step later in this post
+
+
+
+
+
+
+Apparently, the app has to make HTTP requests to the server that's running on the board. Usually, this would need some sort of authentication and authorization, but in my case I'm building this app only for myself. The server is running in my local network and I don't have any port forwarding. This means that only people connected to my network can interact with the server, provided that they know on which ip address and port it runs ( security through obscurity? :) ). At the end of the day, even if someone knows where the server is running, the most harm he can do is change the color of the lights on my desk or enable them when they shouldn't be. This would be annoying and would ultimately increase my electricity bills, but I'm willing to take the risk. ```If the application you're bulding is dealing with any kind of sensitive data, I don't recommend the solution from this blog post. Security is important, and we should always think about it especially when dealing with IoT.```
