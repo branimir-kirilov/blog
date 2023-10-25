@@ -4,11 +4,11 @@
 const siteMetadata = {
   title: 'Branimir Kirilov',
   author: 'Branimir Kirilov',
-  headerTitle: 'assdfsd',
-  description: 'Description would go here',
+  headerTitle: 'Branimir Kirilov blog',
+  description: 'The personal site / blog of Branimir Kirilov',
   language: 'en-us',
   theme: 'system', // system, dark or light
-  siteUrl: 'https://blog-jet-five-22.vercel.app/',
+  siteUrl: 'https://bkirilov.com/',
   siteRepo: 'https://github.com/branimir-kirilov/blog',
   siteLogo: '/static/images/logo.png',
   image: '/static/images/avatar.jpg',
