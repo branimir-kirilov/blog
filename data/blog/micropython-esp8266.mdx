@@ -1,0 +1,113 @@
+---
+title: Micropython for Wemos D1 mini (ESP8266)
+date: '2023-11-01'
+tags: ['iot', 'c', 'python', 'smarthome', 'wemos d1 mini', 'micropython']
+draft: false
+summary: Installing firmware for Micropython on ESP8266 based board
+---
+
+# What is it?
+
+[Micropython](https://micropython.org/) is a lean and efficient implementation of the Python 3 programming language that includes a small subset of the Python standard library and is optimised to run on microcontrollers and in constrained environments.
+
+# Why?
+
+One might have many reasons to do this, but my primary driver is quite simple - developing in Python is much more pleasant for me than developing in C. So without further ado let's see how to install it.
+
+# Installation
+
+The microcontroller that I'm going to be using is the **_ESP8266_** based Wemos [D1 mini v4.0.0](https://www.wemos.cc/en/latest/d1/d1_mini.html). However, Micropython is available for other chips too and you can see them on the official site.
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image alt="wemos d1 mini v4" src="/static/images/mini4.png" width={512} height={128} />
+</p>
+
+### Prerequisites
+
+- Ensure that you have python installed and running
+
+### Install esptool
+
+The next step is to install [esptool](https://github.com/espressif/esptool) which is a utility to communicate with the ROM bootloader in Espressif (ESP) chips. This can be done by running:
+
+```shell
+pip install esptool
+```
+
+### Download the firmware
+
+After the esptool is installed, the firmware that is going to be installed on the microcontroller should be downloaded. This can be done by visiting [the official site](https://micropython.org/download/#esp8266) and choosing the firmware for the chipset you have. In the case of Wemos D1 mini, this would be the **_ESP8266_**.
+
+### Locating the port of the device
+
+At this point I'd go ahead and I'd connect the device to my computer. I'm on MacOS and to locate the correct port I can go to the terminal and type:
+
+```shell
+ls /dev/cu.usb*
+```
+
+The port of the device would start with `cu.usbserial*`, in my case I have only one USB plugged in. If you have more than one, you can unplug the microcontroller, check the output of the command and then run it again to see which one is the correct.
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image alt="output-port" src="/static/images/output-port.png" width={512} height={128} />
+</p>
+
+### Flashing the firmware
+
+To erase the flash run the following but replace it with your port name:
+
+```shell
+esptool.py --port /dev/cu.usbserial-1440 erase_flash
+```
+
+To install the new firmware run the following and replace the port and the path to the `.bin` file that you downloaded earilier
+
+```shell
+esptool.py --port /dev/cu.usbserial-1440 erase_flash --baud 115200 write_flash --flash_size=4MB -fm dio 0 path/to/firware.bin
+```
+
+### Testing
+
+To test everything that was done so far, let's create a quick program to blink the on-board LED of the microcontroller.
+
+To connect to the board, the `screen` command can be used.
+
+```shell
+screen /dev/cu.usbserial-1440
+```
+
+After it runs (should be a blank terminal), hit the enter button. The terminal should now display `>>>`. This indicates that we are now running an interactive shell. Now paste the following and hit enter again:
+
+```python
+import time
+from machine import Pin
+
+led = Pin(2, Pin.OUT)
+
+while True:
+	if led.value():
+		led.off()
+	else:
+		led.on()
+	time.sleep_ms(250)
+```
+
+If you see the on-board LED blinking every 250ms (like in the video below), it means that the installation was successful! 🎉
+
+<video src="/static/images/demo-micropython.mp4" width="640" height="360" controls muted />
