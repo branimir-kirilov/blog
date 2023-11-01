@@ -1,0 +1,40 @@
+---
+title: Plant irrigation monitor with Wemos D1 and Firebase [Part 1]
+date: '2023-11-01'
+tags:
+  [
+    'iot',
+    'c',
+    'js',
+    'smarthome',
+    'reactnative',
+    'react',
+    'prompt',
+    'expo',
+    'wemos d1 mini',
+    'firebase',
+  ]
+draft: true
+summary: General idea and prototyping
+---
+
+# Intro
+
+In the past several chapters in this blog I created from scratch a simple app that controls an RGB LED strip. My next idea is to extend the functionality of the app by including another home automation tool - a "smart'
+plant irrigation monitor.
+
+# The objective
+
+The objective is simple. I need to periodically measure the soil moisture of a given plant and collect the metrics somewhere. Then I would need to extend the React Native app from the previous chapters with a new section dedicated to the plant monitoring. The device should be battery-powered and ideally it should last a long time. Maybe it would be a good idea to add a small monitor to display the current moisture directly on it.
+
+# Prerequisites
+
+- I've decided to use another **_esp8266_** based board from Wemos, this time I've chosen the [D1 mini v4.0.0](https://www.wemos.cc/en/latest/d1/d1_mini.html). They come with a build in WiFi, can be programed with Arduino IDE and the community has already created a ton of open-source libs that I can use. Also, they are relatively inexpensive and last but not least - they carry a small form-factor.
+
+- The actual moisture monitoring would require a **_dedicated sensor_**. Over the years I've tried different kinds of sensors for this matter, and I've found out that the - [capacitive ones](https://www.aliexpress.com/item/32864255890.html) are way more corrosion resistant than the rest (such as [these](https://store.arduino.cc/products/grove-moisture-sensor))
+
+- For power and charging of the device I'd use a [battery shield](https://www.wemos.cc/en/latest/d1_mini_shield/battery.html). It would let me easily connect a Li-ion/LiPo battery and charge it through micro USB (type B). The exact battery that I'll use is an 18650 li-ion battery from Samsung. (3.6V/2150mAh ICR18650-22P for reference). I would also use a generic battery holder.
+
+- For a display I would use a generic 0.96" OLED, although I still need to find out how much is the power consumption and how the display would affect the battery life. In the long run, it may be better to go on without a display
+
+- Jumpers and soldering are also required
