@@ -1,6 +1,6 @@
 ---
-title: Plant irrigation monitor with Wemos D1 and Firebase [Part 1]
-date: '2023-11-01'
+title: Homemade plant irrigation monitor - [Part 1] - Wiring up and reading moisture data
+date: '2023-11-07'
 tags:
   [
     'iot',
@@ -14,27 +14,174 @@ tags:
     'wemos d1 mini',
     'firebase',
   ]
-draft: true
-summary: General idea and prototyping
+draft: false
+summary: Creating a DIY irrigation monitor using Wemos D1 mini and sending data to Firebase RTDB
 ---
 
-# Intro
+## Intro
 
-In the past several chapters in this blog I created from scratch a simple app that controls an RGB LED strip. My next idea is to extend the functionality of the app by including another home automation tool - a "smart'
-plant irrigation monitor.
+It's not a secret to anyone that I was born and raised in the countryside. While I was growing up my parents introduced me to a wide range of agricultural activities,
+including the nurturing of a thriving vegetable garden. This garden was sown each spring and diligently nurtured
+until the arrival of autumn. However, my parents live in the city and the garden is outside of it, several miles away.
+Of course, most gardening tasks can be accomplished on weekends, but a one critical aspect requires constant care: irrigation. Striking the perfect balance between soil moisture,
+ensuring it's neither too dry nor overly saturated, is a challenge. But how does one manage this from a distance? This DIY project aims to solve exactly this problem!
 
-# The objective
+_In the past several chapters in this blog I created from scratch a simple app that controls an RGB LED strip. My idea is to **extend the functionality of the app** by including another home automation tool - a "smart'
+plant irrigation monitor capable of **realtime monitoring** as well as **historical tracking** of soil moisture._
 
-The objective is simple. I need to periodically measure the soil moisture of a given plant and collect the metrics somewhere. Then I would need to extend the React Native app from the previous chapters with a new section dedicated to the plant monitoring. The device should be battery-powered and ideally it should last a long time. Maybe it would be a good idea to add a small monitor to display the current moisture directly on it.
+## The objective
 
-# Prerequisites
+The objective is simple. I need to periodically measure the soil moisture of a given plant and collect the metrics somewhere.
+Then I would need to **extend the React Native** app from the previous project with a new section dedicated to the plant monitoring.
+The device should be **battery-powered** and ideally it should last a long time before needing a recharge. Maybe it would be a _good idea_ (¬‿¬) to add a small monitor to display the current moisture
+directly on it but that depends on the power consumption that the display would need.
 
-- I've decided to use another **_esp8266_** based board from Wemos, this time I've chosen the [D1 mini v4.0.0](https://www.wemos.cc/en/latest/d1/d1_mini.html). They come with a build in WiFi, can be programed with Arduino IDE and the community has already created a ton of open-source libs that I can use. Also, they are relatively inexpensive and last but not least - they carry a small form-factor.
+## Prerequisites
 
-- The actual moisture monitoring would require a **_dedicated sensor_**. Over the years I've tried different kinds of sensors for this matter, and I've found out that the - [capacitive ones](https://www.aliexpress.com/item/32864255890.html) are way more corrosion resistant than the rest (such as [these](https://store.arduino.cc/products/grove-moisture-sensor))
+- I've decided to use another **_esp8266_** based controller from Wemos, this time I've chosen the [D1 mini v4.0.0](https://www.wemos.cc/en/latest/d1/d1_mini.html).
+  It comes with a **build-in WiFi**, can be programed with Arduino IDE and the community has already created a **ton of open-source libs** that I can use. Also,
+  they are relatively **inexpensive** and last but not least - they carry a **small form-factor**.
 
-- For power and charging of the device I'd use a [battery shield](https://www.wemos.cc/en/latest/d1_mini_shield/battery.html). It would let me easily connect a Li-ion/LiPo battery and charge it through micro USB (type B). The exact battery that I'll use is an 18650 li-ion battery from Samsung. (3.6V/2150mAh ICR18650-22P for reference). I would also use a generic battery holder.
+- The actual moisture monitoring would require a **dedicated sensor**. Over the years I've tried different kinds of sensors for this matter, and I've found out that the [capacitive ones](https://www.aliexpress.com/item/32864255890.html) are way more corrosion resistant than the rest (such as [these](https://store.arduino.cc/products/grove-moisture-sensor))
 
-- For a display I would use a generic 0.96" OLED, although I still need to find out how much is the power consumption and how the display would affect the battery life. In the long run, it may be better to go on without a display
+- For power and charging of the device I'd use a [battery shield](https://www.wemos.cc/en/latest/d1_mini_shield/battery.html). It would let me easily connect a Li-ion/LiPo battery and charge it through micro USB (type B). The exact battery that I'll use is an **18650 li-ion** battery from Samsung. (**3.6V/2150mAh ICR18650-22P** for reference). I would also use a generic battery holder.
 
-- Jumpers and soldering are also required
+- For a display I would use a generic **0.96" OLED**, although I still need to find out how much is the power consumption and how the display would affect the **battery life**. In the long run, it may be better to go on without a display when using in an outside garden and only use the display for indoor use, for example a houseplant.
+
+- Jumpers and soldering iron are a must... although considering my soldering skills, I may be better off with duct tape only.
+
+## Soldering headers and connecting battery
+
+In my case both the controller and the battery shield arrived without their pins being soldered, so I soldered them first.
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image
+    alt="led-strip-soldered"
+    src="/static/images/soldering-station.jpg"
+    width={256}
+    height={128}
+  />
+  <Image
+    alt="led-strip-soldered"
+    src="/static/images/soldered-headers.jpg"
+    width={256}
+    height={128}
+    style={{ marginLeft: 100 }}
+  />
+</p>
+
+Don't forget to test connections after soldering. To verify, I connected a battery, plugged in the USB port of the battery shield to a usb charger and verified the build-in LED on the
+battery shiled is illuminated in RED - this means the battery is charging. It's also a good idea to test the pins after the headers are soldered, especially if you hold a soldering iron for the first time :)
+
+## Wiring capacitive sensor and reading data
+
+The next step is to wire the sensor up and to calibrate it. The wiring is simple:
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image
+    alt="led-strip-soldered"
+    src="/static/images/capacitive-sensor-wiring.png"
+    width={512}
+    height={256}
+  />
+</p>
+
+Next, lets test that data can be read from the sensor:
+
+```c
+#include <Wire.h>
+
+#define PIN_RESET 255
+#define DC_JUMPER 0
+
+const int SensorPin = A0;
+
+void setup() {
+  Serial.begin(115200);
+}
+
+void loop() {
+  int sensorReading = getSensorReading();
+  Serial.printf("Sensor reading: %d", sensorReading);
+
+  delay(5000);
+}
+
+int getSensorReading() {
+  int sensorReading = analogRead(SensorPin);
+  return sensorReading;
+}
+```
+
+If the wiring is working correctly you should see some value when the sensor is in the air - in my case this is **674**. To test that the sensor works
+you can put it in a container of water (_carefully, without submerging the part above the marked line on it_). In my case it reports **490** when in water.
+These values can be used to calibrate our percentage based moisture level later, so save them.
+
+The other way to calibrate your sensor is to take your min and max values by
+making reference measurements in wet and dry soil. This would give you a greater amplitude to work with when reading the percentage. If the water/air method for reference is used,
+the wet soil would be around 70/100 and the dry around 20/100. If the wet/dry soil method is used it should be closer to 0 and 100. So depending on what you want your percentage to be referenced on, choose one of the two methods.
+I would be going with the former option for now:
+
+```c
+#include <Wire.h>
+
+#define PIN_RESET 255
+#define DC_JUMPER 0
+
+const int SensorPin = A0;
+const int AirValue = 674; // value in air
+const int WaterValue = 490; // value in water
+
+void setup() {
+  Serial.begin(115200);
+}
+
+void loop() {
+  int sensorReading = getSensorReading();
+  int moisture = getMoisturePercent(sensorReading);
+  Serial.printf("Sensor reading: %d", sensorReading);
+  Serial.printf("Moisure %%: %d", moisture);
+
+  delay(5000);
+}
+
+int getSensorReading() {
+  int sensorReading = analogRead(SensorPin);
+  return sensorReading;
+}
+
+// returns % based on the min/max (air/water) values
+int getMoisturePercent(int sensorReading) {
+  int soilMoisturePercent = map(sensorReading, WaterValue, AirValue, 100, 0);
+  if (soilMoisturePercent > 100) {
+    soilMoisturePercent = 100;
+  } else if (soilMoisturePercent < 0) {
+    soilMoisturePercent = 0;
+  }
+  return soilMoisturePercent;
+}
+
+```
+
+After uploading the sketch I placed the sensor in an actual plant with moderately dry soil that was watered a few days ago. It reads ~25%. After (carefully) watering it while the sensor
+was still inside the soil it showed ~70%. It seems like it is working, although it might need more calibration which I would do later.
+
+Great, so far I have a solution for the power and for the actual data reading! 🎉
+
+In the next chapter I'll be setting up Firbase RTDB and I'll send the moisture data to it...
