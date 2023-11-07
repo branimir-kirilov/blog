@@ -1,5 +1,4 @@
 import { Inter } from '@next/font/google'
-import siteMetadata from '@/data/siteMetadata'
 import headerNavLinks from '@/data/headerNavLinks'
 import Link from './Link'
 import SectionContainer from './SectionContainer'
@@ -19,16 +18,18 @@ const inter = Inter({
 
 const LayoutWrapper = ({ children }: Props) => {
   const router = useRouter()
+  const pathWithoutQuery = router.asPath.split('?')[0]
+  console.log('path', pathWithoutQuery)
 
   return (
     <SectionContainer>
       <div className={`${inter.className} flex h-screen flex-col justify-between font-sans`}>
         <header className="flex items-center justify-between py-10">
           <div>
-            <Link href="/" aria-label={router.asPath}>
+            <Link href="/" aria-label={pathWithoutQuery}>
               <div className="flex items-center justify-between">
                 <div className="text-2xl font-semibold sm:block">
-                  {`~${router.asPath === '/' ? '/home' : router.asPath}`}{' '}
+                  {`~${router.asPath === '/' ? '/home' : pathWithoutQuery}`}
                 </div>
               </div>
             </Link>
