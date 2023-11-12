@@ -14,18 +14,458 @@ tags:
     'wemos d1 mini',
     'firebase',
   ]
-draft: true
+draft: false
 summary: Creating a DIY irrigation monitor using Wemos D1 mini and sending data to Firebase RTDB
 ---
 
-# Firebase realtime database setup
+## Intro
 
-# Sending sensor data to RTDB
+In my last blog post, I successfully read data from the capacitive sensor – a small victory! However, I only displayed it on the Arduino IDE's serial monitor, which is quite a distance from my ultimate goal. In this chapter, I'll walk through setting up my [Firebase](https://firebase.google.com/) account, configuring the **Real-time Database**, **handling authentication**, and writing the code to seamlessly **publish the sensor data**.
 
-# Connection OLED screen and displaying data to it
+## What is firebase?
 
-# Deepsleep
+Firebase is a mobile and web application development platform that provides a suite of cloud-based services to help developers build and scale applications. It was initially developed by Firebase, Inc., which was later acquired by Google in 2014. Firebase offers a variety of tools and services that facilitate various aspects of app development, including authentication, real-time database, cloud storage, hosting, and more.
 
-# Prototyping the device box and formfactor
+Key features of Firebase include: Authentication, Real-time Database, Authentication, Cloud Functions, Storage and more. As all cloud providers, Firebase is paid, but it also
+offers a pay as you go plan, which for this use case should cover all the computing without spending anything.
 
-# Testing and conclusions
+## Firebase Project Setup
+
+The initial step is to create a Firebase account. Once that's completed, I proceed to create a project. This can be accomplished by navigating to the projects page and clicking the "Add project" button:
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image
+    alt="add project in firebase"
+    src="/static/images/add-projects-firebase.png"
+    width={512}
+    height={256}
+  />
+</p>
+
+I'm then asked if I want to use Google analytics. For the sake of this demo project, I would choose to not use them, but you can do it in your case. They offer a good amount of features out of the box.
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image
+    alt="choose analytics"
+    src="/static/images/create-project-firebase.png"
+    width={512}
+    height={256}
+  />
+</p>
+
+After creating the project, I'm redirected to its console. Here, I can add services, change pricing plans, and more.
+
+The default pricing plan is "Spark," which comes with a free tier. If the usage exceeds the free tier, the service is temporarily disabled until the next billing cycle. On the other hand, the "Blaze" plan operates on a pay-as-you-go model and charges based on usage after the free tier limit is reached.
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image
+    alt="led-strip-soldered"
+    src="/static/images/firebase-pricing-plans.png"
+    width={512}
+    height={256}
+  />
+</p>
+
+Below are the Spark/Blaze plans comparisons for Authentication and RTDB. For the purposes of this project, the Spark plan is more than enough.
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image
+    alt="led-strip-soldered"
+    src="/static/images/firebase-auth-pricing.png"
+    width={512}
+    height={256}
+  />
+</p>
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image
+    alt="led-strip-soldered"
+    src="/static/images/firebase-rtdb-pricing.png"
+    width={512}
+    height={256}
+  />
+</p>
+
+## Creating a user
+For most apps, user identification is crucial. In my case, authentication serves two main purposes:
+
+1. The device (ESP) needs authentication to write data to the DB. It should only be allowed to write data for the user it is authenticated with.
+2. The future application will use the same user to read this data. Each user should only access their own data, not the data of others.
+
+Implementing authentication can be challenging, but thankfully, Firebase's auth service simplifies this process for developers. Ideally, this should be set up dynamically. After a user signs up or logs in on the mobile app, they should be able to add a device, perhaps by scanning a QR code or joining a WiFi network started by it. However, this is currently beyond my scope, as it involves more development than I can undertake at the moment. Instead, I'll proceed to **create a user through the Firebase console** and store the credentials on the ESP board. This way, it can authenticate with Firebase and write to the Real-time Database.
+
+To create a user, I first need to choose an authentication provider—I'll opt for username/password. Then, I'll click on "add user," input an email and a password, and remember them.
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image
+    alt="led-strip-soldered"
+    src="/static/images/firebase-add-user-screen.png"
+    width={1024}
+    height={256}
+  />
+</p>
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image
+    alt="led-strip-soldered"
+    src="/static/images/firebase-user-add-screen.png"
+    width={1024}
+    height={256}
+  />
+</p>
+
+## Creating a database
+
+Now that a user is created - I need to create a database. For this I should navigate to the **Realtime Databse** tab and then click on **Create Database**.
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image
+    alt="led-strip-soldered"
+    src="/static/images/firebase-create-database-screen.png"
+    width={1024}
+    height={256}
+  />
+</p>
+
+For region, I shall choose one that is close to me. In my case this is Belgium.
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image
+    alt="led-strip-soldered"
+    src="/static/images/firebase-database-location-screen.png"
+    width={1024}
+    height={256}
+  />
+</p>
+
+You could start the DB in test mode, but I prefer to start it in locked mode. By default this will not allow any reads and writes to it unless I specifically setup the rules to allow it.
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image
+    alt="led-strip-soldered"
+    src="/static/images/firebase-database-setup-screen.png"
+    width={1024}
+    height={256}
+  />
+</p>
+
+## Database rules
+
+The schema that I would like to have for my data is the folowing:
+
+```json
+{
+  "UsersData": {
+    "{uid}": {
+      "readings":  {
+        "{timestamp}": 
+          {
+            "moisture": 5,
+            "sensor": 645,
+          }
+      }
+    }
+  }
+}
+```
+
+This means that a user should only be able to access the part of the data under his user id. To set up the DB access permissions correctly, I need to go to the Rules tab and update the default ones with the following:
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image
+    alt="led-strip-soldered"
+    src="/static/images/firebase-database-rules-screen.png"
+    width={1024}
+    height={256}
+  />
+</p>
+
+With this the Firebase setup is ready. Now I need to implement the logic on the ESP board that will send the sensor data.
+
+## Installing the ESP Client Library
+
+Fortunately, the community has already crafted a library that simplifies interaction with the Real-time Database (RTDB) — it's known as [Firebase ESP Client](https://github.com/mobizt/Firebase-ESP-Client).
+
+If you're using the Arduino IDE, installation is straightforward:
+
+1. Navigate to Sketch > Include Library > Manage Libraries.
+2. Search for "Firebase ESP Client" and install the Firebase Arduino Client Library for ESP8266 and ESP32 by Mobitz.
+
+For users employing VS Code and platformIO, you can refer to the library's installation steps [here](https://github.com/mobizt/Firebase-ESP-Client#installation). Moreover, numerous examples for various Firebase services can be found in [the examples folder](https://github.com/mobizt/Firebase-ESP-Client/tree/main/examples).
+
+## Creating a Secrets File
+
+To securely manage sensitive information while uploading my sketch to GitHub, I'll create a secrets file named `secrets.h`. I'll ensure its confidentiality by adding `secret*` to the .gitignore file. Within this file, I can define the necessary secrets, ensuring they remain exclusively on my local machine.
+
+## Connecting the ESP to WiFi
+
+For now the ESP needs to do 4 things:
+
+1. Connect to WiFi
+2. Authenticate to Firebsae
+3. Collect sensor data
+4. Send data to RTDB
+
+```c
+#include <Arduino.h>
+#include <SPI.h>
+#include <Wire.h>
+#include <Firebase_ESP_Client.h>
+#include <NTPClient.h>
+#include <ESP8266WiFi.h>
+#include <WiFiUdp.h>
+#include <addons/TokenHelper.h>
+#include <addons/RTDBHelper.h>
+#include "secrets.h"
+
+#define PIN_RESET 255
+#define DC_JUMPER 0
+
+const int SensorPin = A0;
+const int AirValue = 674;
+const int WaterValue = 490;
+int timestamp;
+int hours, minutes, seconds;
+
+String uid;
+String databasePath;
+String parentPath;
+String moisturePath = "/moisture";
+String sensorReadingPath = "/sensor";
+String timePath = "/timestamp";
+
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "pool.ntp.org");
+
+FirebaseJson json;
+FirebaseData fbdo;
+FirebaseAuth auth;
+FirebaseConfig config;
+
+void setupWifi() {
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.printl("Connecting to WiFi!");
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(300);
+  }
+  Serial.printl("WiFi connected!");
+}
+
+void configureFirebase() {
+  Serial.println("Initializing Firebase");
+
+  // Define these in secrets.h
+  config.api_key = API_KEY; // Project settings -> General -> Web API key
+  auth.user.email = USER_EMAIL;
+  auth.user.password = USER_PASSWORD;
+  config.database_url = DATABASE_URL; // You can find this in RTDB
+  config.cert.data = rootCACert; // /* Google Root CA can be downloaded from https://pki.goog/repository/ -> Root CA certs -> GTS Root R1 - R4 */
+
+  config.token_status_callback = tokenStatusCallback;
+  fbdo.setCert(rootCACert);
+  Firebase.begin(&config, &auth);
+  Firebase.reconnectWiFi(true);
+  Firebase.setDoubleDigits(5);
+}
+
+void sendDataToRTDB() {
+  // Collect metrics from sensor
+  int sensorReading = getSensorReading();
+  int moisture = getMoisturePercent(sensorReading);
+  
+  // Get uid from auth
+  uid = auth.token.uid.c_str();
+  
+  // Database path
+  databasePath = "/UsersData/" + uid + "/readings";
+  timestamp = getEpochTime();
+  parentPath = databasePath + "/" + String(timestamp);
+
+  // Setting JSON data
+  json.set(moisturePath.c_str(), String(moisture));
+  json.set(sensorReadingPath.c_str(), String(sensorReading));
+  json.set(timePath, String(timestamp));
+
+  // Appending the json to DB path for the particular id and printing the result
+  Serial.println("RTDB status: %s \n", Firebase.RTDB.setJSON(&fbdo, parentPath.c_str(), &json) ? "ok" : fbdo.errorReason().c_str());
+}
+
+void setup() {
+  Serial.begin(115200);
+  Serial.setTimeout(2000);
+  while (!Serial) { }
+
+  initializeOledAndShowStartupScreen();
+
+  setupWifi();
+
+  configureFirebase();
+}
+
+void loop() {
+  if (Firebase.ready()) { // According to the docs, this needs to be called repeatedly to handle autentication
+    sendDataToRTDB();
+    delay(10000);
+  }
+}
+
+unsigned long getEpochTime() {
+  timeClient.update();
+  unsigned long now = timeClient.getEpochTime(); 
+  return now;
+}
+
+int getSensorReading() {
+  int sensorReading = analogRead(SensorPin);
+  Serial.printf("Sensor: %d \n", sensorReading);
+  return sensorReading;
+}
+
+int getMoisturePercent(int sensorReading) {
+  int soilMoisturePercent = map(sensorReading, WaterValue, AirValue, 100, 0);
+  if (soilMoisturePercent > 100) {
+    soilMoisturePercent = 100;
+  } else if (soilMoisturePercent < 0) {
+    soilMoisturePercent = 0;
+  }
+  Serial.printf("Moist.: %d%% \n", soilMoisturePercent);
+  return soilMoisturePercent;
+}
+
+```
+
+## Testing
+
+With this implementation, the device is set to send data every 10 seconds. To verify, I uploaded the sketch to the ESP board, plugged the soil sensor into a houseplant, and voila! After a few seconds, I began to see new records in the Real-time Database (RTDB):
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image
+    alt="led-strip-soldered"
+    src="/static/images/rtdb-records.png"
+    width={1024}
+    height={256}
+  />
+</p>
+
+## Deep Sleep
+
+Constantly keeping the device awake and sending data every 10 seconds will quickly drain its battery, especially when soil moisture changes infrequently. I believe a sensible approach is to take samples every **3 hours**. During the remaining time, the ESP can leverage its internal **deep sleep** functionality to conserve battery power. Based on my measurements, the device consumes around **85 microamps** while in deep sleep and peaks at **180 milliamps for approximately 8 seconds** when connecting to WiFi and sending data. With a 3000mAh battery, this setup should last for **more than a month** in theory. Let's explore how to implement deep sleep.
+
+1. From a hardware perspective, connect the reset pin (RST) to the **D0 (GPIO16) pin** so that the device can wake up after sleeping.
+
+> For a comprehensive guide on sleep modes for Wemos D1 mini, check out [this informative article](https://mischianti.org/wemos-d1-mini-esp8266-the-three-type-of-sleep-mode-to-manage-energy-savings-part-4/).
+
+2. Initiate deep slee after sending data
+
+```c
+#define DEEP_SLEEP_INTERVAL 10800e6 // 3 * 60 * 60 sec = 3h
+
+void loop() {
+  if (Firebase.ready()) { // According to the docs, this needs to be called repeatedly to handle autentication
+    sendDataToRTDB();
+    ESP.deepSleep(DEEP_SLEEP_INTERVAL); 
+  }
+}
+```
+
+I recommend testing the deep sleep functionality with a shorter interval initially. This precaution ensures that any issues with the device waking up can be identified sooner, rather than waiting for a 3-hour cycle to discover potential problems (like I did :)).
+
+If you manage to see records every 3 hours 🎉 congratulations 🎉, you have a working soil moisture device.
+
+In the next chapter I'll look at how I can add an OLED display to it and fit it into a manageable form factor. Stay tuned!
