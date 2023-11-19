@@ -1,6 +1,6 @@
 ---
-title: Draft
-date: '2023-11-07'
+title: Homemade plant irrigation monitor - [Part 3] - OLED screen and fitting everyting inside a usable form factor
+date: '2023-11-19'
 tags:
   [
     'iot',
@@ -13,16 +13,318 @@ tags:
     'expo',
     'wemos d1 mini',
     'firebase',
+    'oled',
   ]
-draft: true
-summary: Creating a DIY irrigation monitor using Wemos D1 mini and sending data to Firebase RTDB
+draft: false
+summary: Attaching an OLED display and building a prorotype from scratch
+images: ['img.png']
+layout: PostLayout
 ---
 
-DISPPLAY lid - 2.4mA
-Whole device when sending data - peaks to 200mA
+## Intro
+
+In the previous part of this blog series I explained how the ESP board can securely connect and transmit data to Firebase RTDB. However, currently the sensor, the board and the shield are just loosely hanging around
+on their wires, which is less than ideal when I have to actually put this into a real plant or garden
 
 ## Connection OLED screen and displaying data to it
 
-## Prototyping the device box and formfactor
+In the past chapters I mentioned an OLED display as an optional requirement.
+Right now all of the data is already present in RTDB and can be fetched and distributed by any application I choose, therefore an external display is not needed at all. Moreover, it will significantly shorten the
+battery life. However, I want to connect an external display just for the fun of it... and the things I'll learn of course.
 
-# Testing and conclusions
+The display that I'll be using in 0.96" 128x64 inexpensive I2C OLED [101864](https://www.smart-prototyping.com/0-96-OLED-Display-IIC-New-Version). It has only 4 pins and this is the connection scheme.
+(I already have the moisture sensor connected to the ground (G) pin, so I had to solder a common wire between them.)
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image
+    alt="oled screen connection"
+    src="/static/images/oled-connection.png"
+    width={512}
+    height={256}
+  />
+</p>
+
+Next, you need to add the Adafruit libraries to Arduino IDE in order to control the OLED. Open Arduino IDE and click Sketch -> Include Library -> Manage Libraries. Search for Adafruit, and scroll down to the Adafruit Gfx library and install it. Next, scroll down to the Adafruit SSD1306 library and install it.
+
+Here's a tiny code snippet that you can use to test the display and the connection. Alternatively, you can use one of the examples that come with the SSD1306 library.
+
+```c
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+
+void setup()   {
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for (;;);
+  }
+  delay(2000);
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0, 10);
+  display.println("Hello world");
+  display.display();
+}
+
+void loop() {
+}
+```
+
+After upload, you should see the text "Hello world" on the screen.
+
+## Integrating the display to the existing Sketch
+
+I would like the display to print all the information on it during the connection and the interaction with RTDB (like a linux terminal). For this I'll define a new method
+that will take input parameters and will print them both on the display and to the serial monitor. This way I debug issue with connection and sensor easily while only looking at the OLED screen
+or by inspecting the serial when the device is connected via USB.
+
+```c
+// Initializes the OLED screen on startup
+void initializeOledAndShowStartupScreen() {
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for (;;);
+  }
+  delay(2000);
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0, 10);
+  logMessage("Waking up!");
+  delay(2000);
+}
+```
+
+```c
+// Appends a (formatted) message to the display and to serial output
+// Formats the display output in 3 lines of 2 rows. When the buffer is full, clears the bottom most line and puts a new one on top (like a stack)
+// Also accepts variable arguments
+void logMessage(const char* format, ...) {
+  va_list args;
+  va_start(args, format);
+
+  // Get current time
+  timeClient.update();
+  hours = timeClient.getHours() + 2; // convert to my time zone
+  minutes = timeClient.getMinutes();
+  seconds = timeClient.getSeconds();
+
+  char buffer[128];
+  vsnprintf(buffer, sizeof(buffer), format, args);
+
+  // Format hours and minutes with leading zeros
+  String formattedHours = (hours < 10) ? "0" + String(hours) : String(hours);
+  String formattedMinutes = (minutes < 10) ? "0" + String(minutes) : String(minutes);
+
+  String logMessage = formattedHours + ":" + formattedMinutes + "> " + String(buffer);
+  currentLine = (currentLine + 1) % MAX_LINES;
+  logLines[currentLine] = logMessage;
+
+  display.clearDisplay();
+
+  for (int i = 0; i < MAX_LINES; i++) {
+    int lineIndex = (currentLine - i + MAX_LINES) % MAX_LINES;
+    display.setCursor(0, i * 16);
+    display.println(logLines[lineIndex]);
+  }
+
+  display.display();
+  va_end(args);
+
+  Serial.println(logMessage);
+}
+```
+
+Now I will use the function everywhere where I print, which will print both to the screen and to the Serial. For example:
+
+```c
+  int getSensorReading() {
+  int sensorReading = analogRead(SensorPin);
+  logMessage("Sensor: %d \n", sensorReading);
+  return sensorReading;
+}
+```
+
+> Full source code can be found on [Github](https://github.com/branimir-kirilov/home-automation/blob/main/firmware/plant-monitor/plant-monitor.ino)
+
+This is how it looks after I uploaded the sketch:
+
+<video src="/static/images/oled-video.mp4" width="640" height="360" controls muted />
+
+## Brainstorming a box / container
+
+Now that I added the display, the initial idea I had for the form factor of the device has changed:
+
+1. The enclosure needs to be water resistant (so I can put in my garden)
+2. The internals should be easily accessible (to charge the battery and update the sketch if needed)
+3. The sensor should be outside, so it can be plugged in the soil
+4. The display should be visible, but inside the weather resistant container
+
+With the new requirement I would have to make sure that a part of the box is transparent so that the display readings can be observed from outside.
+
+The plan I have is to form the device based on a gardening tool which name I don't really know, but I'll call **seed hole puncher** ... you guessed it it's used to punch holes in the ground ... where seeds grow. This is how it looks like
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image
+    alt="seed hole puncher image"
+    src="/static/images/seed-hole-puncher.jpeg"
+    width={512}
+    height={256}
+  />
+</p>
+
+Now imagine that the pointy peak it has is the soil moisture sensor and everything else is fitted inside of the handle. Also the handle is just straight, like a go pro grip with a transparent part on the top.
+I have the vision but I'm definately not sure how I would create this out of thin air.
+
+I don't have access to 3D printer or anything of this sort so I'll have to use things I find at home or at the nearest
+hardware store. I went shopping and I found a cheap snow cleaning brush for cars. It was made out of thin plastic that I can cut and manipulate on my own. I also grabbed a few sterile containers that I can you as the top of the ... thing.
+
+After a bit of R&D I ended up with something which represented my vision, or at least a prototype of it:
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  {/* <h5>This is the **thing** in its closed weather resistant state</h5> */}
+  <Image
+    alt="full prototype closed"
+    src="/static/images/full-prototype-closed.jpg"
+    width={512}
+    height={256}
+  />
+</p>
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  {/* <h5>This is the **thing** when the top cap is opened</h5> */}
+
+  <Image
+    alt="full prototype opened"
+    src="/static/images/full-prototype-open.jpg"
+    width={512}
+    height={256}
+  />
+</p>
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  {/* <h5>This is the **thing** from the top, where the display can be inspected</h5> */}
+
+  <Image
+    alt="full prototype opened"
+    src="/static/images/full-prototype-top.jpg"
+    width={512}
+    height={256}
+  />
+</p>
+
+It seems that this meets all of my requirements! Now, let's test this on a real plant the basil that we take care of in our kitchen.
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  {/* <h5>No plants were harmed during the testing</h5> */}
+
+  <Image
+    alt="full prototype opened"
+    src="/static/images/basil.jpg"
+    width={512}
+    height={256}
+  />
+</p>
+
+## Testing and battery considerations
+
+As I mention above, the display would certainly affect the battery life. But how much damage it would do? I decided to make some measurements and to find out. I brought up my multimeter and I set it to measure amps. Then I connected
+the positive wire of the battery to the red probe on the multimeter and the negative (black) probe to the + of the ESP board. This should give me a reading of the amps the device uses and sure it does - during start up
+the whole thing uses about 150mA and peaks up to 200mA while connecting to WiFi and sending data. This lasts about 9 seconds, after this the device goes to deep - sleep. When this happens my multimeter shows no consumption at all,
+perhaps it's not that good and can't measure consumption this low. From sources I found online [such as this one](https://bitbanksoftware.blogspot.com/2019/06/how-much-current-do-oled-displays-use.html) I estimated that the display would use around 8mA while the Wemos D1 mini v4 around
+**84µA** (source [here](https://salvatorelab.com/2023/01/wemos-d1-mini-deep-sleep-current-draw/)). This souce also mentions that it can peak up to the whopping ~450mA, which is a lot.
+
+Using [this cool calculator](https://www.of-things.de/battery-life-calculator.php) calculator the estimated time with the display always on at the default brightness is 11 days with a single battery.
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image
+    alt="full prototype opened"
+    src="/static/images/battery-life-calculator-res.png"
+    width={512}
+    height={256}
+  />
+</p>
+
+If I run the calculator again, this time with the data without the display, the results are as expected entirely different.
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image
+    alt="full prototype opened"
+    src="/static/images/battery-life-calculator-res.png"
+    width={512}
+    height={256}
+  />
+</p>
+
+## Conclusions
+
+All of the above are just estimations so I decided to actually test how long would it last with the OLED on. The results were terrible - around 4 days and a half with a battery close to 100%.
+The next thing that I'm yet about to do is disconnect the OLED and carry out the test again. I'll be posting an update to this topic once I find out how long would it last for real.
