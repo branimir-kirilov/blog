@@ -32,7 +32,7 @@ Right now all of the data is already present in RTDB and can be fetched and dist
 battery life. However, I want to connect an external display just for the fun of it and the things I'll learn.
 
 The display that I'll be using is a **0.96" 128x64 inexpensive I2C OLED** [101864](https://www.smart-prototyping.com/0-96-OLED-Display-IIC-New-Version). It has only 4 pins and this is the connection scheme.
-(I already have the moisture sensor connected to the ground (G) pin, so I had to solder a common wire between them)
+(I already have the moisture sensor connected to the ground (G) pin, so I had to solder a common wire between them).
 
 <p
   align="center"
@@ -51,7 +51,9 @@ The display that I'll be using is a **0.96" 128x64 inexpensive I2C OLED** [10186
   />
 </p>
 
-Next, I need to add the Adafruit libraries to Arduino IDE in order to control the OLED. Open Arduino IDE and click `Sketch -> Include Library -> Manage Libraries`. Search for Adafruit, scroll down to the Adafruit Gfx library, and install it. Next, scroll down to the `Adafruit SSD1306` library and install it.
+Next,the Adafruit libraries need to be installed in order to control the OLED.
+If you are using Arduino IDE, open it and click `Sketch -> Include Library -> Manage Libraries`. Search for Adafruit, scroll down to the `Adafruit Gfx library`
+and `Adafruit SSD1306` and install them.
 
 Here's a tiny code snippet that you can use to test the display and the connection. Alternatively, you can use one of the examples that come with the SSD1306 library.
 
@@ -82,7 +84,7 @@ void loop() {
 }
 ```
 
-After uploading, you should see the text "Hello world" on the screen.
+After uploading, you should see the text `"Hello world"` text on the screen.
 
 ## Integrating the display to the existing Sketch
 
@@ -173,7 +175,7 @@ Now that I added the display, the initial idea I had for the form factor of the 
 
 With the new requirement, I would have to make sure that a part of the box is transparent so that the display readings can be observed from outside.
 
-The plan I have is to form the device based on a gardening tool whose name I don't really know, but I'll call **seed hole puncher** ... you guessed it it's used to punch holes in the ground ... where seeds grow. This is what it looks like
+The plan I have is to form the device based on a gardening tool whose name I don't really know, but I'll call **seed hole puncher** ... you guessed it it's used to punch holes in the ground ... where seeds grow. This is what it looks like.
 
 <p
   align="center"
@@ -280,12 +282,12 @@ It seems that this meets all of my requirements! Now, let's test this on the bas
 ## Testing and battery considerations
 
 As I mentioned above, the display would certainly affect the battery life. But how much damage it would do? I decided to make some measurements and to find out. I brought up my multimeter and I set it to measure amps. Then I connected
-the positive wire of the battery to the red probe on the multimeter and the negative (black) probe to the + of the ESP board. This should give me a reading of the amps the device uses and sure it does - during start
-the whole thing uses **~150mA** and peaks up to **~250mA** while connecting to WiFi and sending data. This lasts about **~10 seconds**, after it, the device goes to deep-sleep. When this happens my multimeter shows no consumption at all,
+the positive wire of the battery to the red probe on the multimeter and the negative (black) probe to the + of the ESP board. This gave me a reading of the current draw of the device. During start
+the whole thing uses **~150mA** and peaks up to **~250mA** while connecting to WiFi and sending data. This lasts about **~10 seconds**, after this the device goes to deep-sleep. When this happens my multimeter shows **no current draw** at all,
 perhaps it's not that good and can't measure consumption this low. From sources I found online [such as this one](https://bitbanksoftware.blogspot.com/2019/06/how-much-current-do-oled-displays-use.html), I estimated that the display would use around **8.5mA** with 50% pixels illuminated at the default brightness, while the Wemos D1 mini v4 around
-**84µA** (source [here](https://salvatorelab.com/2023/01/wemos-d1-mini-deep-sleep-current-draw/)). This source also mentions that it can peak up to a whopping ~450mA, which is a lot for this type of board.
+**84µA** (source [here](https://salvatorelab.com/2023/01/wemos-d1-mini-deep-sleep-current-draw/)). This source also mentions that it can peak up to a whopping **~450mA**, which is a lot for this type of board.
 
-Using [this cool calculator](https://www.of-things.de/battery-life-calculator.php) calculator the estimated time with the display always on at the default brightness is **11 days** with a single battery.
+Using [this cool calculator](https://www.of-things.de/battery-life-calculator.php) the estimated time with the display always on at the default brightness is **11 days** with a single battery.
 
 <p
   align="center"
@@ -304,7 +306,7 @@ Using [this cool calculator](https://www.of-things.de/battery-life-calculator.ph
   />
 </p>
 
-If I run the calculator again, this time with the data without the display, the results are as expected entirely different - **~380 days**.
+If I run the calculator again but this time with the data without the display, the results are entirely different - **~380 days**.
 
 <p
   align="center"
@@ -325,7 +327,7 @@ If I run the calculator again, this time with the data without the display, the 
 
 ## Conclusions
 
-All of the above are just estimations so I decided to actually test how long would it last with the OLED on. The results were **terrible** - ~4 and a half days of measurements on 4h long intervals and the battery died!
+All of the above were just estimations so I decided to actually test how long would it last with the OLED on. The results were **terrible** - **4 and a half days** of measurements on **4h long intervals** and the battery died!
 This would definitely not work for a real garden. The display has to come off and this would be my next step. If you followed along to this point, you can just revert the code from this topic and disconect the additional wires from the ESP board.
 Everything else should remain the same.
 
