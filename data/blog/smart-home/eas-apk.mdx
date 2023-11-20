@@ -14,7 +14,7 @@ In the preceding chapter, I completed the initial version of the Home automation
 
 ### Installing the CLI
 
-1. Install the ```eas-cli```:
+1. Install the `eas-cli`:
 
 ```shell
 npm install -g eas-cli
@@ -32,7 +32,7 @@ eas login
 eas build:configure
 ```
 
-At this point, I got an error becuase I changed my ```app.json``` to ```app.config.js``` in the past. If you have converted your config file too, you'd probably receive the same error:
+At this point, I got an error becuase I changed my `app.json` to `app.config.js` in the past. If you have converted your config file too, you'd probably receive the same error:
 
 ```bash
 Warning: Your project uses dynamic app configuration, and the EAS project ID can't automatically be added to it.
@@ -51,29 +51,29 @@ To complete the setup process, set "extra.eas.projectId" in your app.config.js:
 }
 ```
 
-The resolution is easy - go to the config file and add the ```projectId``` in the ```extra``` object like it is defined above. If you don't have this property you'd need to create it. After this is done the configuration command should pass as expected.
+The resolution is easy - go to the config file and add the `projectId` in the `extra` object like it is defined above. If you don't have this property you'd need to create it. After this is done the configuration command should pass as expected.
 
-Before I actually trigger a build I'll also modify the configuration in ```eas.json``` because I want to only generate an APK and not deploy to any app store:
+Before I actually trigger a build I'll also modify the configuration in `eas.json` because I want to only generate an APK and not deploy to any app store:
 
 ```json
 {
-    "build": {
-      "development": {
-        "developmentClient": true,
-        "distribution": "internal"
-      },
-      "preview": {
-        "distribution": "internal",
-          "android": {
-            "buildType": "apk"
-          }
-      },
-      "production": {}
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
     },
-    "submit": {
-      "production": {}
-    }
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production": {}
+  },
+  "submit": {
+    "production": {}
   }
+}
 ```
 
 [Build APKs for Android Emulators and devices official docs
@@ -81,7 +81,7 @@ Before I actually trigger a build I'll also modify the configuration in ```eas.j
 
 ### Starting a build
 
-To start a build, I'll run the below command which specifies the ```preview``` profile that I defined above. This profile will result in an APK being generated.
+To start a build, I'll run the below command which specifies the `preview` profile that I defined above. This profile will result in an APK being generated.
 
 ```shell
 eas build -p android --profile preview
@@ -102,37 +102,61 @@ extra: {
 }
 ```
 
-There are several ways that you can define a secret in EAS, I'll do this through the UI console. It's as simple as navigating to the ```Secrets``` tab, clicking on ```Create``` and then defining the name and the value of the secret:
+There are several ways that you can define a secret in EAS, I'll do this through the UI console. It's as simple as navigating to the `Secrets` tab, clicking on `Create` and then defining the name and the value of the secret:
 
- <p align="center" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-    <Image alt="eas-secrets-tab" src="/static/images/secrets.png" width={512} height={128} />
+{' '}
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image alt="eas-secrets-tab" src="/static/images/secrets.png" width={1024} height={128} />
 </p>
 
-When the build runs, this secret will be automatically provided and you should be able to pick it up with ```process.env.SECRET_NAME```. In order to actually use the secret in the code (in my case in ```LightService.ts```) you can do this:
-
+When the build runs, this secret will be automatically provided and you should be able to pick it up with `process.env.SECRET_NAME`. In order to actually use the secret in the code (in my case in `LightService.ts`) you can do this:
 
 ```tsx
-import Constants from 'expo-constants';
+import Constants from 'expo-constants'
 
-const WEMOS_URL = Constants?.expoConfig?.extra?.WEMOS_HOST;
+const WEMOS_URL = Constants?.expoConfig?.extra?.WEMOS_HOST
 ```
 
 Keep in mind that although you're not checking in the secret in source control this way, anything that is included in your client side code should be considered public and readable to any individual that can run your application.
 
-### Installing the apk 
+### Installing the apk
 
 After the build has completed succesfully, there are two ways to install the APK on a real device. One is through the UI. Navigate to the builds section and open your build.
 
-
-<p align="center" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-    <Image alt="eas-secrets-tab" src="/static/images/builds.png" width={512} height={128} />
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image alt="eas-secrets-tab" src="/static/images/builds.png" width={1024} height={128} />
 </p>
 
-<p align="center" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-    <Image alt="eas-install-tab" src="/static/images/install.png" width={512} height={128} />
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image alt="eas-install-tab" src="/static/images/install.png" width={1024} height={128} />
 </p>
 
-Then, click on the install button and you'd see a modal with a QR code. Scan the code with your phone and this would download the APK. ```You'd have to allow untrusted apps to be installed on your phone in order to do this```
+Then, click on the install button and you'd see a modal with a QR code. Scan the code with your phone and this would download the APK. `You'd have to allow untrusted apps to be installed on your phone in order to do this`
 
 The other way is to just check your terminal from where you have initiated the build, and the same QR code should be in there. The process after this is the same.
 
@@ -140,12 +164,18 @@ The other way is to just check your terminal from where you have initiated the b
 
 After installing the APK on my device, I now have the standalone app and I can test it:
 
-<p align="center" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-    <Image alt="installed-app" src="/static/images/app-standalone.jpeg" width={512} height={128} />
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image alt="installed-app" src="/static/images/app-standalone.jpeg" width={1024} height={128} />
 </p>
 
-
-🎉  After opening and testing the app everything works as expected! Awesome - my desk is lit now and I have a quick access on my phone to control it!
+🎉 After opening and testing the app everything works as expected! Awesome - my desk is lit now and I have a quick access on my phone to control it!
 
 I'll keep enhancing this application in the future with various features. You can find all the source code and the current progress [on GitHub](https://github.com/branimir-kirilov/desk-lights/tree/main/app).
-
