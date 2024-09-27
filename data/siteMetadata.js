@@ -13,7 +13,7 @@ const siteMetadata = {
   socialBanner: '/static/images/twitter-card.png',
   email: 'kirilov.branimir@gmail.com',
   github: 'https://github.com/branimir-kirilov',
-  youtube: 'https://www.youtube.com/@branimirkirilov4223',
+  youtube: '',
   linkedin: 'https://www.linkedin.com/in/branimir-kirilov',
   locale: 'en-US',
   // set to true if you want a navbar fixed to the top
@@ -42,11 +42,11 @@ const siteMetadata = {
     //   googleAnalyticsId: '', // e.g. G-XXXXXXX
     // },
   },
-  newsletter: {
-    // supports mailchimp, buttondown, convertkit, klaviyo, revue, emailoctopus, beehive
-    // Please add your .env file and modify it according to your selection
-    provider: 'buttondown',
-  },
+  // newsletter: {
+  //   // supports mailchimp, buttondown, convertkit, klaviyo, revue, emailoctopus, beehive
+  //   // Please add your .env file and modify it according to your selection
+  //   provider: 'buttondown',
+  // },
   comments: {
     // If you want to use an analytics provider you have to add it to the
     // content security policy in the `next.config.js` file.
