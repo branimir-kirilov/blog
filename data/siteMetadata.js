@@ -3,7 +3,8 @@ const siteMetadata = {
   title: 'Branimir Kirilov',
   author: 'Branimir Kirilov',
   headerTitle: 'Branimir Kirilov blog',
-  description: 'The personal site / blog of Branimir Kirilov',
+  description:
+    "Discover Branimir's blog, where creativity meets technology. Explore topics on everything that can be done at home (iot, gadgets, cameras), and join me on a journey of discovery and inspiration",
   language: 'en-us',
   theme: 'system', // system, dark or light
   siteUrl: 'https://bkirilov.com/',
