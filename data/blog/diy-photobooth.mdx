@@ -1,6 +1,6 @@
 ---
 title: DIY Event photo booth with DSLR camera and iPad
-date: '2024-31-08'
+date: '2024-08-31'
 tags: ['dslr', 'camera', 'photobooth', 'hardware', 'diy', 'printing']
 draft: false
 summary: Photo booth out of scratch with sharing and printing capabilities using LumaBooth
@@ -8,11 +8,198 @@ summary: Photo booth out of scratch with sharing and printing capabilities using
 
 ## Why?
 
-It's simple... I'm getting married. Along with the numerous organisational details an event like a wedding requires, I decided that we also need a photo booth. Of couse I'm not
-talking about an old school walk-in-pull-the-curtain type of thing but a modernized one that you might have seen on bigger events, with DSLR camera, touchscreen (tablet) and various filters and props you might choose from. Oh and also printing capabilities.
-Why don't we just rent one you might ask.. because they are goddamn expensive in my country. For reference, you can rent one for 500lv (~250usd) for 3 hours, and for every other hour they will tax you additional 200lv (~100usd). So I thought, hey, you know what -
-I have almost all of the hardware for this available, I can build this myself and will probably cost fraction of the price.
+Simply put, I got married. With all the planning that a wedding entails, I figured a photo booth would be a fun addition. Not the old-fashioned walk-in-and-pull-the-curtain kind, but a modern one—like you'd see at large events—with a DSLR camera, touchscreen (tablet), various filters and props, and of course, the option to print photos.
+
+You might wonder why I didn’t just rent one. Well, they're outrageously expensive where I live. For example, renting one costs around 500lv (~250 USD) for just 3 hours, and every additional hour is another 200lv (~100 USD). So, I thought, why not build one myself? I already had most of the hardware lying around, and it would probably cost a fraction of the rental price.
 
 ## Objective
 
-After a few days of browsing occasionally for ideas mainly on pinterest I had a clear vision of what I want to build:
+After a few days of browsing occasionally for ideas (mainly on Pinterest) I had a clear vision of what I wanted to build:
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image alt="booth-idea" src="/static/images/booth-idea.jpg" width={512} height={256} />
+</p>
+
+I put together a list of the items I needed:
+
+1. Wooden legs:
+
+- I initially searched online for old tripods but came across a listing for wooden legs from a standing lamp on our local online marketplace, OLX (similar to Amazon) (~30lv).
+
+2. Wooden box (a door on the back for easy access is a bonus):
+
+- I found a suitable one at a local hardware store, advertised as a ["wooden crate 30x40cm"](https://bauhaus.bg/darvena-shtayga-s-kapak-zeller/p/126501) (~30lv).
+
+3. Tablet:
+
+- My soon-to-be wife had an [iPad Air 10](https://www.apple.com/bg/ipad-10.9/) that she kindly let me use for the project (free).
+
+4. Camera:
+
+- My old [Nikon D3300 DSLR](https://www.amazon.com/Nikon-Digital-Focus-S-18-55mm-3-5-5-6G/dp/B00HQ4W1QE) was perfect for the job (free).
+
+5. LED ring light:
+
+   - I found a cheap one at a local bookstore (~8lv).
+
+6. Printer:
+   - At first, I planned to build the setup without a printer, but later decided to buy a brand new [Canon Selphy CP1500](https://magazin.photosynthesis.bg/en/76340-printer-printer-canon-selphy-cp1500-rozov-aksesoar-canon-kp-36ip-color-ink-paper-set.html) (200lv).
+
+## Build
+
+### 1. Gather all needed parts and instruments
+
+- nuts, bolts, L-shaped brackets, circular hole saw bits, magnets, screwdriver and electric drill
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image
+    alt="booth-instruments"
+    src="/static/images/booth-instruments.png"
+    width={512}
+    height={256}
+  />
+</p>
+
+### 2. Bracket for the camera
+
+- I combined two large L-shaped brackets (their total width matched the width of the box) with two smaller ones to create a mount for the camera. The larger brackets have holes on both sides to attach the entire assembly to the box. The smaller brackets, on the other hand, have a hole that can be used to mount the camera with a standard tripod plate or a regular 6mm bolt.
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image alt="booth-bracket" src="/static/images/booth-bracket.png" width={512} height={256} />
+</p>
+
+### 3. Cutting the holes
+
+- At the bottom of the box, I made a hole that matches the circular part of the wooden tripod. Then, I used a straight bracket to secure them together.
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image alt="booth-legs" src="/static/images/booth-legs.png" width={512} height={256} />
+</p>
+
+- I mounted the camera assembly at the top, made a hole for the lens, and cut an opening for the tablet at the bottom. I also added soft insulation to the sides to protect the tablet's screen from scratches.
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image alt="booth-hole" src="/static/images/booth-hole.png" width={512} height={256} />
+</p>
+
+To mount the tablet, I used two wooden 1x1" planks. I attached one to the bottom of the box and the other to L-shaped brackets positioned approximately two-thirds up the height of the tablet. (see image below)
+
+### 4. Connection and software
+
+- The proprietary USB cable for the camera was Type-A, while the iPad only has a Type-C input, so I had to use an external dongle to connect the two devices. However, this setup also allowed me to connect the dongle to an external power source to keep the tablet charged while the booth is in use. Since the camera doesn't support charging over USB, I prepared a second battery as a backup in case the first one runs out.
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image alt="booth-connected" src="/static/images/booth-connected.png" width={512} height={256} />
+</p>
+
+- The application I used to run the whole thing is called [LumaBooth](https://dslrbooth.com/lumabooth-photo-booth-app). It needs a subscription for full access, but for testing purposes it provides a demo mode which is more than enough for me to validate my idea.
+
+The app supports everything I need:
+
+        1. External DSLR connection
+        2. Custom event templates (backgrounds, colors, descriptions, etc.)
+        3. Filters and stickers
+        4. Green screen or AI-generated backgrounds
+        5. Sharing to multiple devices and platforms (cloud storage, email, SMS, etc.)
+        6. Printing via AirPrint
+
+### 5. Lighting
+
+The inexpensive LED ring light I bought was easy to disassemble, so I removed the black plastic backing to slim it down. I mounted the LED strip directly onto the box using hot glue and placed the white diffuser on top. To decorate the rough edges of the box where I made cuts for the iPad, I added some floral tape to give it a cleaner look.
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image
+    alt="booth-light1"
+    src="/static/images/booth-light1.png"
+    width={400}
+    height={256}
+    style={{ marginRight: '15px' }}
+  />
+  <Image alt="booth-light2" src="/static/images/booth-light2.png" width={400} height={256} />
+</p>
+
+For the printer, I added a mounted wooden shelf at the point where the tripod legs connect, and 🎉 voila 🎉 the booth was ready for action!
+
+## Final product
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image alt="booth-final" src="/static/images/booth-final.png" width={400} height={256} />
+</p>
+
+Bonus, the photobooth is portable:
+
+<p
+  align="center"
+  style={{
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image alt="booth-portable" src="/static/images/booth-portable.png" width={400} height={256} />
+</p>
