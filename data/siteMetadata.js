@@ -11,7 +11,7 @@ const siteMetadata = {
   siteRepo: 'https://github.com/branimir-kirilov/blog',
   siteLogo: '/static/images/logo.png',
   image: '/static/images/avatar.jpg',
-  socialBanner: '/static/images/twitter-card.png',
+  socialBanner: '/static/images/banner.png',
   email: 'kirilov.branimir@gmail.com',
   github: 'https://github.com/branimir-kirilov',
   youtube: '',
