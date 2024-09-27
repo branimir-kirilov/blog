@@ -12,9 +12,9 @@ const siteMetadata = {
   image: '/static/images/avatar.jpg',
   socialBanner: '/static/images/twitter-card.png',
   email: 'kirilov.branimir@gmail.com',
-  github: 'https://github.com',
-  youtube: 'https://youtube.com',
-  linkedin: 'https://www.linkedin.com',
+  github: 'https://github.com/branimir-kirilov',
+  youtube: 'https://www.youtube.com/@branimirkirilov4223',
+  linkedin: 'https://www.linkedin.com/in/branimir-kirilov',
   locale: 'en-US',
   // set to true if you want a navbar fixed to the top
   stickyNav: true,
